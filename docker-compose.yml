@@ -1,15 +1,14 @@
-# Docker Compose file for the application
 services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_USER: journeo_user
-      POSTGRES_PASSWORD: journeo_password
-      POSTGRES_DB: journeo_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - se2data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U journeo_user -d journeo_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -17,11 +16,11 @@ services:
   backend:
     build: ./backend
     environment:
-      POSTGRES_USER: journeo_user
-      POSTGRES_PASSWORD: journeo_password
-      POSTGRES_DB: journeo_db
-      POSTGRES_HOST: db
-      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
     ports:
       - "8000:8000"
     depends_on:
