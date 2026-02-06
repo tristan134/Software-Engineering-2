@@ -1,0 +1,34 @@
+name: Ruff Lint & Fix
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  ruff-fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Run Ruff with fixes
+        run: ruff check backend/ --fix
+
+      - name: Commit fixes back to PR
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: apply ruff fixes"
