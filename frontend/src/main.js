@@ -1,44 +1,41 @@
-import "./style.css";
-import { DefaultApi } from "./generated/apis/DefaultApi.js";
-import { Configuration } from "./generated/runtime.js";
+import "./css/root.css";
+import "./css/utilities.css";
+import { renderBaseLayout } from "./pages/base.js";
+import { renderDashboardPage } from "./pages/dashboard.js";
 
-const api = new DefaultApi(
-  new Configuration({
-    basePath: "/api",
-  })
-);
+const routes = {
+  "#/": renderDashboardPage,
+};
 
-document.querySelector("#app").innerHTML = `
-  <div class="card">
-    <h1>Landing Page</h1>
-    <p id="status">Lade...</p>
-    <button id="btn">Backend anfragen</button>
-    <pre id="out"></pre>
-  </div>
-`;
-
-const status = document.querySelector("#status");
-const out = document.querySelector("#out");
-
-async function loadHealth() {
-  try {
-    const res = await api.healthApiV1HealthGet();
-    status.textContent = `Health: ${res.status}`;
-  } catch (e) {
-    status.textContent = "Health: FEHLER (Proxy/Backend?)";
-    console.error(e);
-  }
+function navigate(hash) {
+  window.location.hash = hash;
 }
 
-document.querySelector("#btn").addEventListener("click", async () => {
-  out.textContent = "";
-  try {
-    const res = await api.messageApiV1MessageGet();
-    out.textContent = JSON.stringify(res, null, 2);
-  } catch (e) {
-    out.textContent = String(e);
-    console.error(e);
-  }
-});
+function ensureLayout() {
+  const app = document.querySelector("#app");
 
-loadHealth();
+  // Layout nur einmal rendern
+  if (!document.querySelector("#page-content")) {
+    renderBaseLayout({ mount: app });
+  }
+
+  return document.querySelector("#page-content");
+}
+
+function render() {
+  const hash = window.location.hash || "#/";
+  const page = routes[hash] || routes["#/"];
+
+  const contentMount = ensureLayout();
+
+  // beim Seitenwechsel nach oben scrollen
+  window.scrollTo(0, 0);
+
+  page({
+    mount: contentMount,
+    navigate,
+  });
+}
+
+window.addEventListener("hashchange", render);
+render();
