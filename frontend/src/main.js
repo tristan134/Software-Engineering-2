@@ -2,9 +2,11 @@ import "./css/root.css";
 import "./css/utilities.css";
 import { renderBaseLayout } from "./pages/base.js";
 import { renderDashboardPage } from "./pages/dashboard.js";
+import { renderNewJourney } from "./pages/newjourney.js";
 
 const routes = {
   "#/": renderDashboardPage,
+  "#/newjourney": renderNewJourney,
 };
 
 function navigate(hash) {
