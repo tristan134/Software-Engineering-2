@@ -1,0 +1,19 @@
+# Environment variables
+.env
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Logs
+*.log
