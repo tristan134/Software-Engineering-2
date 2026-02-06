@@ -3,7 +3,6 @@ export function renderDashboardPage({ mount }) {
     <section class="landing">
       <h1>🌍 Reiseplaner</h1>
       <div id="journeys"></div>
-      <button id="startBtn" class="start-btn">Jetzt Reise planen</button>
     </section>
   `;
 
