@@ -4,8 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.db import models
-from app.db import schemas
-from app.db.schemas import Journey, ShowJourneySummarize
+from app.db.schemas import ShowJourneySummarize
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
