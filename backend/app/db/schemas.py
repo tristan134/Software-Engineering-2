@@ -34,7 +34,7 @@ class Journey(JourneyBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-class AllJourneys(JourneyBase):
+class ShowJourneySummarize(JourneyBase):
     id: int
 
     # formatting price
