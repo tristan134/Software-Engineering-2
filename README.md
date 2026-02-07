@@ -1,3 +1,6 @@
+Dieses Repository wurde im Rahmen einer Lehrveranstaltung erstellt und dient ausschließlich akademischen Zwecken.
+Der enthaltene Code stellt kein produktionsreifes System dar und ist nicht für den Einsatz in produktiven Umgebungen vorgesehen. Es wird keine Garantie für Korrektheit, Vollständigkeit oder Sicherheit übernommen.
+
 Reise Planer:
 
 Usecases:
