@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.db.models import Journey, Day
-from app.db.schemas import DayCreate, DayUpdate
+from app.db.schemas import DayCreate
 import app.db.schemas as schemas
 
 router = APIRouter(prefix="/days", tags=["days"])
