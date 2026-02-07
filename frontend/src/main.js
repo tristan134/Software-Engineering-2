@@ -3,10 +3,12 @@ import "./css/utilities.css";
 import { renderBaseLayout } from "./pages/base.js";
 import { renderDashboardPage } from "./pages/dashboard.js";
 import { renderNewJourney } from "./pages/newjourney.js";
+import { renderFullJourney } from "./pages/fulljourney.js";
 
 const routes = {
   "#/": renderDashboardPage,
   "#/newjourney": renderNewJourney,
+  "#/fulljourney": renderFullJourney,
 };
 
 function navigate(hash) {
