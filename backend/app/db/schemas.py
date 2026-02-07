@@ -9,6 +9,7 @@ from decimal import Decimal
 # JOURNEY
 # =========================================================
 
+
 class JourneyBase(BaseModel):
     title: str
     price: Optional[Decimal] = None
@@ -35,6 +36,7 @@ class Journey(JourneyBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ShowJourneySummarize(JourneyBase):
     id: int
 
@@ -49,6 +51,7 @@ class ShowJourneySummarize(JourneyBase):
 # ---------------------------------------------------------
 # DAY
 # ---------------------------------------------------------
+
 
 class DayBase(BaseModel):
     title: str
@@ -75,6 +78,7 @@ class Day(DayBase):
 # ---------------------------------------------------------
 # ACTIVITY
 # ---------------------------------------------------------
+
 
 class ActivityBase(BaseModel):
     title: str
@@ -103,6 +107,7 @@ class Activity(ActivityBase):
 # ---------------------------------------------------------
 # FILE UPLOAD
 # ---------------------------------------------------------
+
 
 class FileUploadBase(BaseModel):
     activity_id: int
