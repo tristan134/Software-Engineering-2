@@ -15,7 +15,7 @@ export function renderNewJourney({ mount }) {
 
         <div class="form-group">
           <label class="label" for="price">Gesamtpreis (optional)</label>
-          <input id="price" name="price" type="number" min="0" step="1" placeholder="3000" class="input" />
+          <input id="price" name="price" type="number" min="0" placeholder="3000" class="input" />
         </div>
 
         <div class="flex gap-md mb-md" style="flex-wrap: wrap;">
@@ -100,8 +100,11 @@ export function renderNewJourney({ mount }) {
       <div class="card" data-day-card="${localId}" style="padding: 14px;">
         <div class="actions mb-md">
           <div class="card-title">Tag ${index}</div>
-          <button class="btn btn-secondary" type="button" data-add-activity="${localId}"> + Aktivität
-          </button>
+          <div class="actions-right">
+          <button class="btn btn-secondary btn-sm" type="button" data-edit-day="${localId}">Bearbeiten</button>
+          <button class="btn btn-secondary btn-sm" type="button" data-delete-day="${localId}">Löschen</button>
+          <button class="btn btn-secondary" type="button" data-add-activity="${localId}">+ Aktivität</button>
+        </div>
         </div>
 
 
@@ -171,27 +174,30 @@ export function renderNewJourney({ mount }) {
 
     listEl.innerHTML = `
       <div class="flex flex-column" style="gap: 10px;">
-        ${acts
-          .map((a) => {
-            const timeText =
-                a.start_time || a.end_time
-                  ? `${fmtTime(a.start_time)}${a.end_time ? ` Uhr – ${fmtTime(a.end_time)} Uhr` : ""}`
-                  : "ohne Uhrzeit";
-              
-              const time = escapeHtml(timeText);
-            return `
-              <div class="card activity-item">
-                <div class="activity-row">
-                  <div class="activity-title">${escapeHtml(a.title)}</div>
-                  <div class="activity-time">${time}</div>
+        ${acts.map((a) => {
+          const timeText =
+            a.start_time || a.end_time
+              ? `${fmtTime(a.start_time)}${a.end_time ? ` Uhr – ${fmtTime(a.end_time)} Uhr` : ""}`
+              : "ohne Uhrzeit";
+  
+          return `
+            <div class="card activity-item" data-activity-id="${a.id}">
+              <div class="activity-row">
+                <div class="activity-title">${escapeHtml(a.title)}</div>
+  
+                <div class="activity-right">
+                  <div class="activity-time">${escapeHtml(timeText)}</div>
+                  <button class="btn btn-secondary btn-sm" type="button" data-edit-activity="${a.id}">Bearbeiten</button>
+                  <button class="btn btn-secondary btn-sm" type="button" data-delete-activity="${a.id}">Löschen</button>
                 </div>
               </div>
-            `;
-          })
-          .join("")}
+            </div>
+          `;
+        }).join("")}
       </div>
     `;
   }
+
 
   function wireDayCard(dayCardEl) {
     const localId = dayCardEl.getAttribute("data-day-card");
@@ -204,8 +210,123 @@ export function renderNewJourney({ mount }) {
     const activitiesListEl = dayCardEl.querySelector(`[data-activities-list="${localId}"]`);
     const addActivityBtn = dayCardEl.querySelector(`[data-add-activity="${localId}"]`);
 
+    const editDayBtn = dayCardEl.querySelector(`[data-edit-day="${localId}"]`);
+    const deleteDayBtn = dayCardEl.querySelector(`[data-delete-day="${localId}"]`);
+    const dayTitleEl = dayCardEl.querySelector(`[data-day-title="${localId}"]`);
+
+
     let savedDayId = null;
     let activities = [];
+    let editingActivityId = null;
+    let isEditingDay = false;
+
+    deleteDayBtn.addEventListener("click", async () => {
+      // Wenn Tag noch nicht gespeichert: einfach Card entfernen
+      if (!savedDayId) {
+        if (!confirm("Diesen Tag-Entwurf entfernen?")) return;
+        dayCardEl.remove();
+        return;
+      }
+
+      if (!confirm("Tag wirklich löschen? (Alle Aktivitäten dieses Tages werden mitgelöscht)")) return;
+
+      setStatus(dayStatusEl, "Lösche Tag…", "loading");
+
+      try {
+        const res = await fetch(`http://localhost:8000/api/v1/days/${savedDayId}`, {
+          method: "DELETE",
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setStatus(dayStatusEl, data?.detail || "Fehler beim Löschen des Tages.", "error");
+          return;
+        }
+
+        // UI entfernen
+        dayCardEl.remove();
+      } catch (err) {
+        console.error(err);
+        setStatus(dayStatusEl, "Netzwerkfehler – bitte erneut versuchen.", "error");
+      }
+    });
+
+
+    editDayBtn.addEventListener("click", () => {
+      if (!savedDayId) {
+        setStatus(dayStatusEl, "Bitte zuerst den Tag speichern.", "error");
+        return;
+      }
+
+      isEditingDay = !isEditingDay;
+
+      const inputs = dayForm.querySelectorAll("input");
+      inputs.forEach((i) => (i.disabled = !isEditingDay));
+
+      const submitBtn = dayForm.querySelector("button[type='submit']");
+      submitBtn.disabled = false;
+      submitBtn.textContent = isEditingDay ? "Änderungen speichern" : "Tag speichern";
+
+      setStatus(
+        dayStatusEl,
+        isEditingDay ? "Bearbeitungsmodus aktiv." : "Bearbeitungsmodus beendet.",
+        isEditingDay ? "loading" : ""
+      );
+    });
+
+
+
+    activitiesListEl.addEventListener("click", async (e) => {
+      const delBtn = e.target.closest("[data-delete-activity]");
+      const editBtn = e.target.closest("[data-edit-activity]");
+
+      // Löschen
+      if (delBtn) {
+        const activityId = Number(delBtn.getAttribute("data-delete-activity"));
+        if (!activityId) return;
+
+        if (!confirm("Aktivität wirklich löschen?")) return;
+
+        setStatus(actStatusEl, "Lösche Aktivität…", "loading");
+
+        try {
+          const res = await fetch(`http://localhost:8000/api/v1/activities/${activityId}/`, {
+            method: "DELETE",
+          });
+
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            setStatus(actStatusEl, data?.detail || "Fehler beim Löschen.", "error");
+            return;
+          }
+
+          activities = activities.filter((a) => a.id !== activityId);
+          renderActivities(activitiesListEl, activities);
+          setStatus(actStatusEl, "Aktivität gelöscht.", "success");
+        } catch (err) {
+          console.error(err);
+          setStatus(actStatusEl, "Netzwerkfehler – bitte erneut versuchen.", "error");
+        }
+        return;
+      }
+
+      // Bearbeiten
+      if (editBtn) {
+        const activityId = Number(editBtn.getAttribute("data-edit-activity"));
+        const act = activities.find((x) => x.id === activityId);
+        if (!act) return;
+
+        editingActivityId = activityId;
+        activityForm.style.display = "block";
+
+        activityForm.querySelector("[name='title']").value = act.title || "";
+        activityForm.querySelector("[name='start_time']").value = fmtTime(act.start_time);
+        activityForm.querySelector("[name='end_time']").value = fmtTime(act.end_time);
+
+        setStatus(actStatusEl, "Bearbeitungsmodus: Änderungen speichern.", "loading");
+      }
+    });
+
 
     addActivityBtn.addEventListener("click", () => {
       if (!savedDayId) {
@@ -219,18 +340,31 @@ export function renderNewJourney({ mount }) {
       e.preventDefault();
       if (!ensureJourneySaved()) return;
 
-      setStatus(dayStatusEl, "Speichere Tag…", "loading");
-
       const fd = new FormData(dayForm);
-      const payload = {
+      const payloadCreate = {
         journey_id: journeyId,
         title: (fd.get("title") || "").toString(),
         date: (fd.get("date") || "").toString(),
       };
 
+      const payloadUpdate = {
+        title: (fd.get("title") || "").toString(),
+        date: (fd.get("date") || "").toString(),
+      };
+
+      const isUpdate = Boolean(savedDayId);
+      const url = isUpdate
+        ? `http://localhost:8000/api/v1/days/${savedDayId}/`
+        : `http://localhost:8000/api/v1/days/`;
+
+      const method = isUpdate ? "PUT" : "POST";
+      const payload = isUpdate ? payloadUpdate : payloadCreate;
+
+      setStatus(dayStatusEl, isUpdate ? "Aktualisiere Tag…" : "Speichere Tag…", "loading");
+
       try {
-        const res = await fetch("http://localhost:8000/api/v1/days", {
-          method: "POST",
+        const res = await fetch(url, {
+          method,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
@@ -238,17 +372,28 @@ export function renderNewJourney({ mount }) {
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          setStatus(dayStatusEl, data?.detail || "Fehler beim Speichern des Tages.", "error");
+          setStatus(dayStatusEl, data?.detail || (isUpdate ? "Fehler beim Aktualisieren." : "Fehler beim Speichern."), "error");
           return;
         }
 
-        savedDayId = data.id;
-        setStatus(dayStatusEl, "Tag gespeichert!", "success");
+        // Bei Create: ID merken
+        if (!savedDayId) savedDayId = data.id;
 
+        // Nach Save: wieder sperren
         dayForm.querySelectorAll("input").forEach((i) => (i.disabled = true));
-        dayForm.querySelector("button[type='submit']").disabled = true;
 
-        // Activity form freischalten
+        const submitBtn = dayForm.querySelector("button[type='submit']");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Tag speichern";
+
+        isEditingDay = false;
+
+        // Optional: Titelanzeige hübsch aktualisieren
+        if (dayTitleEl) dayTitleEl.textContent = `Tag ${localId}`;
+
+        setStatus(dayStatusEl, isUpdate ? "Tag aktualisiert!" : "Tag gespeichert!", "success");
+
+        // Activity-Form bleibt wie bei dir: erst nach Save sinnvoll
         activityForm.style.display = "none";
       } catch (err) {
         console.error(err);
@@ -256,23 +401,39 @@ export function renderNewJourney({ mount }) {
       }
     });
 
+
     activityForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       if (!savedDayId) return;
 
-      setStatus(actStatusEl, "Speichere Aktivität…", "loading");
-
       const fd = new FormData(activityForm);
-      const payload = {
+
+      const payloadCreate = {
         day_id: savedDayId,
         title: (fd.get("title") || "").toString(),
         start_time: (fd.get("start_time") || "").toString() || null,
         end_time: (fd.get("end_time") || "").toString() || null,
       };
 
+      const payloadUpdate = {
+        title: (fd.get("title") || "").toString(),
+        start_time: (fd.get("start_time") || "").toString() || null,
+        end_time: (fd.get("end_time") || "").toString() || null,
+      };
+
+      const isEdit = Boolean(editingActivityId);
+      const url = isEdit
+        ? `http://localhost:8000/api/v1/activities/${editingActivityId}/`
+        : `http://localhost:8000/api/v1/activities/`;
+
+      const method = isEdit ? "PUT" : "POST";
+      const payload = isEdit ? payloadUpdate : payloadCreate;
+
+      setStatus(actStatusEl, isEdit ? "Aktualisiere Aktivität…" : "Speichere Aktivität…", "loading");
+
       try {
-        const res = await fetch("http://localhost:8000/api/v1/activities", {
-          method: "POST",
+        const res = await fetch(url, {
+          method,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
@@ -280,15 +441,22 @@ export function renderNewJourney({ mount }) {
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          setStatus(actStatusEl, data?.detail || "Fehler beim Speichern der Aktivität.", "error");
+          setStatus(actStatusEl, data?.detail || (isEdit ? "Fehler beim Aktualisieren." : "Fehler beim Speichern."), "error");
           return;
         }
 
-        activities.push(data);
-        renderActivities(activitiesListEl, activities);
+        if (isEdit) {
+          activities = activities.map((a) => (a.id === editingActivityId ? data : a));
+          editingActivityId = null;
+          setStatus(actStatusEl, "Aktivität aktualisiert!", "success");
+        } else {
+          activities.push(data);
+          setStatus(actStatusEl, "Aktivität gespeichert!", "success");
+        }
 
-        setStatus(actStatusEl, "Aktivität gespeichert!", "success");
+        renderActivities(activitiesListEl, activities);
         activityForm.reset();
+        activityForm.style.display = "none";
       } catch (err) {
         console.error(err);
         setStatus(actStatusEl, "Netzwerkfehler – bitte erneut versuchen.", "error");
@@ -296,6 +464,7 @@ export function renderNewJourney({ mount }) {
     });
 
     renderActivities(activitiesListEl, activities);
+
   }
 
   // Journey erstellen
