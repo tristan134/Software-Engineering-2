@@ -14,8 +14,14 @@ def create_activity(payload: ActivityCreate, db: Session = Depends(get_db)):
     if not day:
         raise HTTPException(status_code=404, detail="Day nicht gefunden")
 
-    if payload.start_time and payload.end_time and payload.end_time < payload.start_time:
-        raise HTTPException(status_code=400, detail="Enddatum darf nicht vor Startdatum liegen")
+    if (
+        payload.start_time
+        and payload.end_time
+        and payload.end_time < payload.start_time
+    ):
+        raise HTTPException(
+            status_code=400, detail="Enddatum darf nicht vor Startdatum liegen"
+        )
 
     title = payload.title.strip()
     if not title:
@@ -25,7 +31,7 @@ def create_activity(payload: ActivityCreate, db: Session = Depends(get_db)):
         title=title,
         day_id=payload.day_id,
         start_time=payload.start_time,
-        end_time=payload.end_time
+        end_time=payload.end_time,
     )
     db.add(act)
     db.commit()
@@ -42,7 +48,9 @@ def list_activities_for_day(day_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{activity_id}", response_model=schemas.Activity)
-def update_activity(activity_id: int, payload: schemas.ActivityUpdate, db: Session = Depends(get_db)):
+def update_activity(
+    activity_id: int, payload: schemas.ActivityUpdate, db: Session = Depends(get_db)
+):
     act = db.get(Activity, activity_id)
     if not act:
         raise HTTPException(status_code=404, detail="Aktivität nicht gefunden")
@@ -61,11 +69,14 @@ def update_activity(activity_id: int, payload: schemas.ActivityUpdate, db: Sessi
         act.end_time = payload.end_time
 
     if act.start_time and act.end_time and act.end_time < act.start_time:
-        raise HTTPException(status_code=400, detail="Endzeit darf nicht vor Startzeit liegen")
+        raise HTTPException(
+            status_code=400, detail="Endzeit darf nicht vor Startzeit liegen"
+        )
 
     db.commit()
     db.refresh(act)
     return act
+
 
 @router.delete("/{activity_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_activity(activity_id: int, db: Session = Depends(get_db)):

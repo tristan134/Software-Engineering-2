@@ -12,8 +12,14 @@ def create_journey(payload: JourneyCreate, db: Session = Depends(get_db)):
     if not payload.title.strip():
         raise HTTPException(status_code=400, detail="title darf nicht leer sein")
 
-    if payload.start_date and payload.end_date and payload.end_date < payload.start_date:
-        raise HTTPException(status_code=400, detail="end_date darf nicht vor start_date liegen")
+    if (
+        payload.start_date
+        and payload.end_date
+        and payload.end_date < payload.start_date
+    ):
+        raise HTTPException(
+            status_code=400, detail="end_date darf nicht vor start_date liegen"
+        )
 
     journey = Journey(
         title=payload.title.strip(),

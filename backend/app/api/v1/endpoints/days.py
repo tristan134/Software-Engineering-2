@@ -15,19 +15,19 @@ def create_day(payload: DayCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Journey nicht gefunden")
 
     if payload.date and journey.start_date and payload.date < journey.start_date:
-        raise HTTPException(status_code=400, detail="day.date liegt vor journey.start_date")
+        raise HTTPException(
+            status_code=400, detail="day.date liegt vor journey.start_date"
+        )
     if payload.date and journey.end_date and payload.date > journey.end_date:
-        raise HTTPException(status_code=400, detail="day.date liegt nach journey.end_date")
+        raise HTTPException(
+            status_code=400, detail="day.date liegt nach journey.end_date"
+        )
 
     stripped_title = payload.title.strip()
     if not stripped_title:
         raise HTTPException(status_code=400, detail="Titel darf nicht leer sein")
 
-    day = Day(
-        title=stripped_title,
-        journey_id=payload.journey_id,
-        date=payload.date
-    )
+    day = Day(title=stripped_title, journey_id=payload.journey_id, date=payload.date)
     db.add(day)
     db.commit()
     db.refresh(day)
@@ -60,9 +60,13 @@ def update_day(day_id: int, payload: schemas.DayUpdate, db: Session = Depends(ge
 
     if payload.date is not None:
         if journey.start_date and payload.date < journey.start_date:
-            raise HTTPException(status_code=400, detail="day.date liegt vor journey.start_date")
+            raise HTTPException(
+                status_code=400, detail="day.date liegt vor journey.start_date"
+            )
         if journey.end_date and payload.date > journey.end_date:
-            raise HTTPException(status_code=400, detail="day.date liegt nach journey.end_date")
+            raise HTTPException(
+                status_code=400, detail="day.date liegt nach journey.end_date"
+            )
         day.date = payload.date
 
     db.commit()

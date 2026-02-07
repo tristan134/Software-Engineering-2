@@ -15,7 +15,10 @@ class Journey(Base):
     end_date: Mapped[datetime.date] = mapped_column(Date)
     description: Mapped[str] = mapped_column(Text)
 
-    days: Mapped[list["Day"]] = relationship(back_populates="journey", cascade="all, delete")
+    days: Mapped[list["Day"]] = relationship(
+        back_populates="journey", cascade="all, delete"
+    )
+
 
 class Day(Base):
     __tablename__ = "days"
@@ -31,7 +34,7 @@ class Day(Base):
     activities: Mapped[list["Activity"]] = relationship(
         back_populates="day",
         cascade="all, delete-orphan",
-        order_by="Activity.start_time"
+        order_by="Activity.start_time",
     )
 
 
@@ -48,8 +51,7 @@ class Activity(Base):
 
     day: Mapped["Day"] = relationship(back_populates="activities")
     files: Mapped[list["FileUpload"]] = relationship(
-        back_populates="activity",
-        cascade="all, delete-orphan"
+        back_populates="activity", cascade="all, delete-orphan"
     )
 
 
@@ -62,4 +64,3 @@ class FileUpload(Base):
     file_url: Mapped[str] = mapped_column(Text, nullable=False)
 
     activity: Mapped["Activity"] = relationship(back_populates="files")
-
