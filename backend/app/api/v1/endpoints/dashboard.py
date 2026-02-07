@@ -22,3 +22,17 @@ def delete_journey(journey_id: int, db: Session = Depends(get_db)):
     db.delete(journey)
     db.commit()
     return
+
+@router.get("/journeys/{journey_id}")
+def get_full_journey(journey_id: int, db: Session = Depends(get_db)):
+    journey = (
+        db.query(models.Journey)
+        .filter(models.Journey.id == journey_id)
+        .first()
+    )
+
+    if journey is None:
+        raise HTTPException(status_code=404, detail="Reise nicht gefunden")
+
+    return journey
+

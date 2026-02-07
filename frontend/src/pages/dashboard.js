@@ -40,6 +40,7 @@ async function loadJourneys() {
             
             <div>
                 <button class = "btn" onclick="deleteJourney(${j.id})">🗑️</button>
+                <button class = "btn" onclick="showFullJourney(${j.id})">👀</button>
             </div>
           </div>
         </div>
@@ -51,7 +52,10 @@ async function loadJourneys() {
     console.error(err);
   }
 }
-
+function showFullJourney(id) {
+  window.location.hash = `#/fulljourney/${id}`;
+}
+window.showFullJourney = showFullJourney;
 
 // ------------------------------------------------------
 // LÖSCHEN EINER REISE

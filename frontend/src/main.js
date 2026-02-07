@@ -3,10 +3,12 @@ import "./css/utilities.css";
 import { renderBaseLayout } from "./pages/base.js";
 import { renderDashboardPage } from "./pages/dashboard.js";
 import { renderNewJourney } from "./pages/newjourney.js";
+import { renderFullJourney } from "./pages/fulljourney.js";
 
 const routes = {
   "#/": renderDashboardPage,
   "#/newjourney": renderNewJourney,
+  "#/fulljourney": renderFullJourney,
 };
 
 function navigate(hash) {
@@ -26,18 +28,18 @@ function ensureLayout() {
 
 function render() {
   const hash = window.location.hash || "#/";
-  const page = routes[hash] || routes["#/"];
-
   const contentMount = ensureLayout();
 
-  // beim Seitenwechsel nach oben scrollen
   window.scrollTo(0, 0);
 
-  page({
-    mount: contentMount,
-    navigate,
-  });
+  if (hash.startsWith("#/fulljourney/")) {
+    return renderFullJourney({ mount: contentMount, navigate });
+  }
+
+  const page = routes[hash] || routes["#/"];
+  page({ mount: contentMount, navigate });
 }
+
 
 window.addEventListener("hashchange", render);
 render();
