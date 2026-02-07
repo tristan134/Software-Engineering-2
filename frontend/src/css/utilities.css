@@ -7,6 +7,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  min-height: var(--control-h);
 
   padding: 10px 16px;
   border-radius: var(--radius-sm);
@@ -30,6 +31,10 @@
   transform: translateY(1px);
 }
 
+.btn:hover {
+  transform: translateY(-1px);
+}
+
 /* Primary Button */
 .btn-primary {
   background: var(--color-primary);
@@ -38,7 +43,7 @@
 
 .btn-primary:hover {
   background: var(--color-primary-light);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 
 /* Secondary Button */
@@ -50,6 +55,7 @@
 
 .btn-secondary:hover {
   background: var(--color-bg);
+  box-shadow: var(--shadow-md);
 }
 
 /* Accent Button */
@@ -60,6 +66,7 @@
 
 .btn-accent:hover {
   filter: brightness(0.95);
+  box-shadow: var(--shadow-md);
 }
 
 .btn:disabled,
@@ -79,6 +86,7 @@
 .select {
   width: 100%;
   padding: 10px 12px;
+  min-height: var(--control-h);
 
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
@@ -103,13 +111,28 @@
 .select:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(220, 193, 145, 0.3);
+  box-shadow: var(--focus-ring);
+}
+
+.input:focus-visible,
+.textarea:focus-visible,
+.select:focus-visible,
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .input::placeholder,
 .textarea::placeholder {
   color: var(--color-text-muted);
 }
+
+.input:required:invalid,
+.textarea:required:invalid,
+.select:required:invalid {
+  border-color: rgba(122, 46, 40, 0.35);
+}
+
 
 /* =========================
    Form Layout
@@ -138,10 +161,12 @@
   border-radius: var(--radius-md);
   padding: var(--space-md);
   box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
 }
 
 .card-header {
   font-weight: 700;
+  font-size: 1rem;
   margin-bottom: var(--space-sm);
 }
 
@@ -158,19 +183,89 @@
 
 .form-status {
   font-size: 0.9rem;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+.form-status:empty {
+  padding: 0;
+  border: 0;
+  min-height: 0;
 }
 
 .form-status.loading {
+  background: rgba(122, 102, 82, 0.08);
+  border-color: rgba(122, 102, 82, 0.18);
   color: var(--color-text-muted);
 }
 
 .form-status.success {
+  background: rgba(47, 107, 60, 0.10);
+  border-color: rgba(47, 107, 60, 0.18);
   color: #2f6b3c;
 }
 
 .form-status.error {
+  background: rgba(122, 46, 40, 0.10);
+  border-color: rgba(122, 46, 40, 0.18);
   color: #7a2e28;
 }
+
+/* =========================
+   Action Row (Status + Buttons)
+   ========================= */
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+/* Status darf wachsen und umbrechen */
+.actions .form-status {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Buttons bleiben kompakt rechts */
+.actions .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.actions-right {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+/* Mobile: untereinander, Button voll breit */
+@media (max-width: 560px) {
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions .btn {
+    width: 100%;
+  }
+
+  .actions-right {
+    width: 100%;
+    flex-direction: column;
+  }
+  .actions-right .btn {
+    width: 100%;
+  }
+}
+
 
 
 /* =========================
@@ -186,9 +281,15 @@
 .mb-md { margin-bottom: var(--space-md); }
 .mb-lg { margin-bottom: var(--space-lg); }
 
+.gap-xs { gap: var(--space-xs); }
+.gap-sm { gap: var(--space-sm); }
+.gap-md { gap: var(--space-md); }
+.gap-lg { gap: var(--space-lg); }
+
 /* Text */
 .text-muted {
   color: var(--color-text-muted);
+  line-height: 1.4;
 }
 
 .text-center {

@@ -35,21 +35,22 @@ export function renderNewJourney({ mount }) {
           <textarea id="description" name="description" class="textarea" placeholder="Kurzbeschreibung deiner Reise..."></textarea>
         </div>
 
-        <div class="flex flex-between flex-center mt-md">
+        <div class="actions">
           <div id="journeyStatus" class="form-status"></div>
           <button type="submit" class="btn btn-primary">Reise speichern</button>
         </div>
       </form>
 
       <!-- Days + Activities (initially locked) -->
-      <div class="card" id="daysCard" style="max-width: 820px; display:none;">
-        <div class="flex flex-between flex-center mb-md">
+      <div class="card" id="daysCard" style="display:none;">
+        <div class="actions mb-md">
           <div>
             <div class="card-header" style="margin:0;">Tage & Aktivitäten</div>
             <div class="text-muted" id="daysHint">Füge Tage hinzu und plane deinen Ablauf.</div>
           </div>
           <button class="btn btn-accent" id="addDayBtn" type="button">+ Tag</button>
         </div>
+
 
         <div id="daysStatus" class="form-status mb-md"></div>
         <div id="daysList" class="flex flex-column" style="gap: 12px;"></div>
@@ -94,13 +95,15 @@ export function renderNewJourney({ mount }) {
     return true;
   }
 
-  function dayTemplate({ localId }) {
+  function dayTemplate({ localId, index }) {
     return `
       <div class="card" data-day-card="${localId}" style="padding: 14px;">
-        <div class="flex flex-between flex-center mb-md">
-          <div style="font-weight:700;">Tag</div>
-          <button class="btn btn-secondary" type="button" data-add-activity="${localId}">+ Aktivität</button>
+        <div class="actions mb-md">
+          <div class="card-title">Tag ${index}</div>
+          <button class="btn btn-secondary" type="button" data-add-activity="${localId}"> + Aktivität
+          </button>
         </div>
+
 
         <!-- Day create form -->
         <form data-day-form="${localId}" class="mb-md">
@@ -115,7 +118,7 @@ export function renderNewJourney({ mount }) {
             </div>
           </div>
 
-          <div class="flex flex-between flex-center">
+          <div class="actions">
             <div class="form-status" data-day-status="${localId}"></div>
             <button class="btn btn-primary" type="submit">Tag speichern</button>
           </div>
@@ -139,7 +142,7 @@ export function renderNewJourney({ mount }) {
             </div>
           </div>
 
-          <div class="flex flex-between flex-center">
+          <div class="actions">
             <div class="form-status" data-activity-status="${localId}"></div>
             <button class="btn btn-accent" type="submit">Aktivität speichern</button>
           </div>
@@ -170,15 +173,17 @@ export function renderNewJourney({ mount }) {
       <div class="flex flex-column" style="gap: 10px;">
         ${acts
           .map((a) => {
-            const time =
-              a.start_time || a.end_time
-                ? `<span class="text-muted" style="font-size:.9rem;">${fmtTime(a.start_time)}${a.end_time ? `–${fmtTime(a.end_time)}` : ""}</span>`
-                : `<span class="text-muted" style="font-size:.9rem;">ohne Uhrzeit</span>`;
+            const timeText =
+                a.start_time || a.end_time
+                  ? `${fmtTime(a.start_time)}${a.end_time ? ` Uhr – ${fmtTime(a.end_time)} Uhr` : ""}`
+                  : "ohne Uhrzeit";
+              
+              const time = escapeHtml(timeText);
             return `
-              <div class="card" style="padding: 12px;">
-                <div class="flex flex-between flex-center">
-                  <div style="font-weight:700;">${escapeHtml(a.title)}</div>
-                  ${time}
+              <div class="card activity-item">
+                <div class="activity-row">
+                  <div class="activity-title">${escapeHtml(a.title)}</div>
+                  <div class="activity-time">${time}</div>
                 </div>
               </div>
             `;
@@ -348,7 +353,7 @@ export function renderNewJourney({ mount }) {
     const localId = String(dayCounter);
 
     const wrapper = document.createElement("div");
-    wrapper.innerHTML = dayTemplate({ localId });
+    wrapper.innerHTML = dayTemplate({ localId, index: dayCounter });
     const dayCardEl = wrapper.firstElementChild;
 
     daysList.appendChild(dayCardEl);

@@ -1,0 +1,17 @@
+/* =========================
+   Page layout
+   ========================= */
+.landing {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.landing h1 {
+  font-size: 1.6rem;
+  margin: 0 0 var(--space-xs);
+  letter-spacing: 0.2px;
+}
+
+.landing p {
+  margin-top: 0;
+}
