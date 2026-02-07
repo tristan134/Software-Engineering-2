@@ -1,7 +1,7 @@
 export function renderDashboardPage({ mount }) {
   mount.innerHTML = `
     <section class="landing">
-      <h1>🌍 Reiseplaner</h1>
+      <h1>🌍 Reiseplaner TESt</h1>
       <div id="journeys"></div>
     </section>
   `;
@@ -38,8 +38,8 @@ async function loadJourneys() {
             <p><strong>Start:</strong> ${new Date(j.start_date).toLocaleDateString()}</p>
             <p><strong>Ende:</strong> ${new Date(j.end_date).toLocaleDateString()}</p>
             
-            <div class="btn-row">
-                <button onclick="deleteJourney(${j.id})">🗑️ Löschen</button>
+            <div>
+                <button class = "btn" onclick="deleteJourney(${j.id})">🗑️</button>
             </div>
           </div>
         </div>
