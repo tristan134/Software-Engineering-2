@@ -16,6 +16,18 @@ async function loadJourneys() {
     const res = await fetch("http://localhost:8000/api/v1/dashboard/journeys");
     const journeys = await res.json();
 
+    // Wenn KEINE Reisen existieren → Hinweistext anzeigen
+    if (!journeys || journeys.length === 0) {
+      container.innerHTML = `
+        <p style="padding: 1rem; font-size: 1.1rem;">
+          Du hast aktuell noch keine Reise geplant. 🌍✨<br>
+          Lege gleich eine neue Reise über <strong>"Reise hinzufügen"</strong> an und starte ins nächste Abenteuer!
+        </p>
+      `;
+      return;
+    }
+
+    // Wenn Reisen existieren → Karten rendern
     container.innerHTML = journeys
       .map(j => `
         <div class="journey-wrapper">
@@ -33,11 +45,13 @@ async function loadJourneys() {
         </div>
       `)
       .join("");
+
   } catch (err) {
     container.innerHTML = "<p>Fehler beim Laden der Reisen.</p>";
     console.error(err);
   }
 }
+
 
 // ------------------------------------------------------
 // LÖSCHEN EINER REISE
