@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.db import models
-from app.db.schemas import ShowJourneySummarize
+from app.db.schemas import ShowJourneySummarize, Journey
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -23,7 +23,7 @@ def delete_journey(journey_id: int, db: Session = Depends(get_db)):
     db.commit()
     return
 
-@router.get("/journeys/{journey_id}")
+@router.get("/journeys/{journey_id}", response_model=Journey)
 def get_full_journey(journey_id: int, db: Session = Depends(get_db)):
     journey = (
         db.query(models.Journey)
