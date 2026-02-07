@@ -497,6 +497,7 @@ export function renderNewJourney({ mount }) {
       }
 
       journeyId = data.id;
+      //Auch wenn ungenutzt, lassen sonst lässt sich eine Reise nicht anlegen, da die Tage-Sektion die ID braucht
       let createdJourney = null;
       createdJourney = data;
 
