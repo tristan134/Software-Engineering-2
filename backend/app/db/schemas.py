@@ -1,4 +1,5 @@
 from datetime import datetime, time, date
+import datetime as dt
 from pydantic import BaseModel, ConfigDict, field_serializer
 from typing import List, Optional
 from decimal import Decimal
@@ -61,6 +62,7 @@ class DayCreate(DayBase):
 
 class DayUpdate(BaseModel):
     title: Optional[str] = None
+    date: Optional[dt.date] = None
 
 
 class Day(DayBase):
