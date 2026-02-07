@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.db import models
-from app.db.schemas import ShowJourneySummarize
+from app.db import schemas
+from app.db.schemas import Journey, ShowJourneySummarize
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -22,3 +23,17 @@ def delete_journey(journey_id: int, db: Session = Depends(get_db)):
     db.delete(journey)
     db.commit()
     return
+
+@router.get("/journeys/{journey_id}")
+def get_full_journey(journey_id: int, db: Session = Depends(get_db)):
+    journey = (
+        db.query(models.Journey)
+        .filter(models.Journey.id == journey_id)
+        .first()
+    )
+
+    if journey is None:
+        raise HTTPException(status_code=404, detail="Reise nicht gefunden")
+
+    return journey
+

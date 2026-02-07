@@ -28,18 +28,18 @@ function ensureLayout() {
 
 function render() {
   const hash = window.location.hash || "#/";
-  const page = routes[hash] || routes["#/"];
-
   const contentMount = ensureLayout();
 
-  // beim Seitenwechsel nach oben scrollen
   window.scrollTo(0, 0);
 
-  page({
-    mount: contentMount,
-    navigate,
-  });
+  if (hash.startsWith("#/fulljourney/")) {
+    return renderFullJourney({ mount: contentMount, navigate });
+  }
+
+  const page = routes[hash] || routes["#/"];
+  page({ mount: contentMount, navigate });
 }
+
 
 window.addEventListener("hashchange", render);
 render();
