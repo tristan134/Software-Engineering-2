@@ -1,3 +1,5 @@
+import "../css/fulljourney.css";
+
 export async function renderFullJourney({ mount }) {
 	const hash = window.location.hash;
 	const id = hash.split("/")[2];
@@ -17,33 +19,46 @@ export async function renderFullJourney({ mount }) {
 
 		const journey = await res.json();
 
-		// sort the days
 		journey.days.sort((a, b) => new Date(a.date) - new Date(b.date));
 
 		mount.innerHTML = `
-      <section class="journey-page">
+        <section class="journey-page">
 
-        <h1 class="journey-title">${journey.title}</h1>
+            <div class="journey-header-box">
+                <h1 class="journey-title">${journey.title}</h1>
 
-        <p class="journey-description">
-          ${journey.description || "Keine Beschreibung"}
-        </p>
+                <p class="journey-description">
+                    ${journey.description || "Keine Beschreibung"}
+                </p>
 
-        <div class="journey-info">
-          <p><strong>Preis:</strong> ${journey.price ?? "-"} €</p>
-          <p><strong>Start:</strong> ${formatDate(journey.start_date)}</p>
-          <p><strong>Ende:</strong> ${formatDate(journey.end_date)}</p>
-        </div>
+                <div class="journey-flight-timeline">
 
-        <h2 class="journey-section-title">Tage</h2>
+                    <div class="flight-item">
+                        <span class="flight-icon">🛫</span>
+                        <div>
+                            <div class="flight-label">Abflug</div>
+                            <div class="flight-date">${formatDate(journey.start_date)}</div>
+                        </div>
+                    </div>
 
-        <div class="timeline">
-          ${journey.days
-						.map((day, index) => renderDay(day, index, journey.days.length))
-						.join("")}
-        </div>
+                    <div class="flight-line"></div>
 
-      </section>
+                    <div class="flight-item">
+                        <span class="flight-icon">🛬</span>
+                        <div>
+                            <div class="flight-label">Ankunft</div>
+                            <div class="flight-date">${formatDate(journey.end_date)}</div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="timeline">
+                ${journey.days.map((d, i) => renderDay(d, i, journey.days.length)).join("")}
+            </div>
+
+        </section>
     `;
 	} catch (err) {
 		console.error(err);
@@ -54,23 +69,23 @@ export async function renderFullJourney({ mount }) {
 function renderDay(day, index, total) {
 	return `
     <div class="timeline-item">
-      <div class="timeline-marker"></div>
-      ${index < total - 1 ? `<div class="timeline-line"></div>` : ""}
+        <div class="timeline-marker"></div>
+        ${index < total - 1 ? `<div class="timeline-line"></div>` : ""}
 
-      <div class="timeline-content">
-        <h3 class="timeline-day-title">${day.title}</h3>
-        <p><strong>Datum:</strong> ${formatDate(day.date)}</p>
+        <div class="timeline-content">
+            <h3 class="timeline-day-title">${day.title}</h3>
+            <p><strong>Datum:</strong> ${formatDate(day.date)}</p>
 
-        <h4 class="timeline-activities-title">Aktivitäten</h4>
+            <h4 class="timeline-activities-title">Aktivitäten</h4>
 
-        ${
-					day.activities.length === 0
-						? `<p class="text-muted">Keine Aktivitäten vorhanden.</p>`
-						: day.activities.map(renderActivity).join("")
-				}
-      </div>
+            ${
+							day.activities.length === 0
+								? `<p class="text-muted">Keine Aktivitäten vorhanden.</p>`
+								: day.activities.map(renderActivity).join("")
+						}
+        </div>
     </div>
-  `;
+    `;
 }
 
 function renderActivity(activity) {
@@ -78,37 +93,37 @@ function renderActivity(activity) {
 	const end = formatTime(activity.end_time);
 
 	let timeDisplay = "-";
-	if (start && end) {
-		timeDisplay = `${start} – ${end}`;
-	} else if (start) {
-		timeDisplay = start;
-	}
+	if (start && end) timeDisplay = `${start} – ${end}`;
+	else if (start) timeDisplay = start;
 
 	return `
-    <div class="activity-card">
-      <p class="activity-title"><strong>${activity.title}</strong></p>
-      <p class="activity-time">${timeDisplay}</p>
-      <h5 class="activity-files-title">Dateien</h5>
+    <div class="activity-timeline-item">
 
-      ${
-				activity.files.length === 0
-					? `<p class="text-muted">Keine Dateien vorhanden.</p>`
-					: activity.files.map(renderFile).join("")
-			}
+        <div class="activity-timeline-marker"></div>
+        <div class="activity-timeline-line"></div>
+
+        <div class="activity-card">
+            <p class="activity-title">${activity.title}</p>
+            <p class="activity-time">${timeDisplay}</p>
+
+            <h5 class="activity-files-title">Dateien</h5>
+
+            ${
+							activity.files.length === 0
+								? `<p class="text-muted">Keine Dateien vorhanden.</p>`
+								: activity.files.map(renderFile).join("")
+						}
+        </div>
     </div>
-  `;
+    `;
 }
 
 function renderFile(file) {
 	return `
-
-
-
-
     <div class="activity-file">
-      <a href="${file.file_url}" target="_blank">${file.file_name}</a>
+        <a href="${file.file_url}" target="_blank">${file.file_name}</a>
     </div>
-  `;
+    `;
 }
 
 function formatDate(str) {
@@ -118,5 +133,5 @@ function formatDate(str) {
 
 function formatTime(timeStr) {
 	if (!timeStr) return null;
-	return timeStr.slice(0, 5); // HH:MM
+	return timeStr.slice(0, 5);
 }

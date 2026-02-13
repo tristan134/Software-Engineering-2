@@ -1,7 +1,9 @@
+import "../css/dashboard.css";
+
 export function renderDashboardPage({ mount }) {
 	mount.innerHTML = `
     <section class="landing">
-      <h1>🌍 Reiseplaner TESt</h1>
+      <h1>J<i class="fa-solid fa-location-dot"></i>urneo</h1>
       <div id="journeys"></div>
     </section>
   `;
