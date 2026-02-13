@@ -1,96 +1,122 @@
 export async function renderFullJourney({ mount }) {
-  const hash = window.location.hash;
-  const id = hash.split("/")[2];
+	const hash = window.location.hash;
+	const id = hash.split("/")[2];
 
-  if (!id) {
-    mount.innerHTML = "<p>❌ Keine Reise-ID in der URL gefunden.</p>";
-    return;
-  }
+	if (!id) {
+		mount.innerHTML = `<p class="alert alert-error">❌ Keine Reise-ID gefunden.</p>`;
+		return;
+	}
 
-  try {
-    const res = await fetch(`http://localhost:8000/api/v1/dashboard/journeys/${id}`);
+	try {
+		const res = await fetch(`http://localhost:8000/api/v1/journeys/${id}`);
 
-    if (!res.ok) {
-      mount.innerHTML = "<p>❌ Reise konnte nicht geladen werden.</p>";
-      return;
-    }
+		if (!res.ok) {
+			mount.innerHTML = `<p class="alert alert-error">❌ Reise konnte nicht geladen werden.</p>`;
+			return;
+		}
 
-    const journey = await res.json();
+		const journey = await res.json();
 
-    mount.innerHTML = `
-      <section class="landing">
-        <h1>${journey.title}</h1>
+		// sort the days
+		journey.days.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        <p>${journey.description || "Keine Beschreibung"}</p>
+		mount.innerHTML = `
+      <section class="journey-page">
 
-        <p><strong>Preis:</strong> ${journey.price ?? "-"} €</p>
-        <p><strong>Start:</strong> ${formatDate(journey.start_date)}</p>
-        <p><strong>Ende:</strong> ${formatDate(journey.end_date)}</p>
+        <h1 class="journey-title">${journey.title}</h1>
 
-        <h2 style="margin-top: 32px;">Tage</h2>
+        <p class="journey-description">
+          ${journey.description || "Keine Beschreibung"}
+        </p>
 
-        ${journey.days.length === 0
-          ? "<p>Noch keine Tage hinzugefügt.</p>"
-          : journey.days.map(renderDay).join("")}
+        <div class="journey-info">
+          <p><strong>Preis:</strong> ${journey.price ?? "-"} €</p>
+          <p><strong>Start:</strong> ${formatDate(journey.start_date)}</p>
+          <p><strong>Ende:</strong> ${formatDate(journey.end_date)}</p>
+        </div>
+
+        <h2 class="journey-section-title">Tage</h2>
+
+        <div class="timeline">
+          ${journey.days
+						.map((day, index) => renderDay(day, index, journey.days.length))
+						.join("")}
+        </div>
+
       </section>
     `;
-  } catch (err) {
-    console.error(err);
-    mount.innerHTML = "<p>❌ Fehler beim Laden der Seite.</p>";
-  }
+	} catch (err) {
+		console.error(err);
+		mount.innerHTML = `<p class="alert alert-error">❌ Fehler beim Laden der Seite.</p>`;
+	}
 }
 
-function renderDay(day) {
-  return `
-    <div style="
-      padding: 16px;
-      margin: 16px 0;
-      background: #fff8f0;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    ">
-      <h3>${day.title}</h3>
-      <p><strong>Datum:</strong> ${formatDate(day.date)}</p>
+function renderDay(day, index, total) {
+	return `
+    <div class="timeline-item">
+      <div class="timeline-marker"></div>
+      ${index < total - 1 ? `<div class="timeline-line"></div>` : ""}
 
-      <h4 style="margin-top: 16px;">Aktivitäten</h4>
+      <div class="timeline-content">
+        <h3 class="timeline-day-title">${day.title}</h3>
+        <p><strong>Datum:</strong> ${formatDate(day.date)}</p>
 
-      ${day.activities.length === 0 
-        ? "<p>Keine Aktivitäten vorhanden.</p>"
-        : day.activities.map(renderActivity).join("")}
+        <h4 class="timeline-activities-title">Aktivitäten</h4>
+
+        ${
+					day.activities.length === 0
+						? `<p class="text-muted">Keine Aktivitäten vorhanden.</p>`
+						: day.activities.map(renderActivity).join("")
+				}
+      </div>
     </div>
   `;
 }
 
 function renderActivity(activity) {
-  return `
-    <div style="
-      padding: 10px;
-      margin: 10px 0;
-      background: white;
-      border-left: 5px solid #dcc191;
-      border-radius: 6px;
-    ">
-      <p><strong>${activity.title}</strong></p>
-      <p>${activity.start_time || ""} – ${activity.end_time || ""}</p>
+	const start = formatTime(activity.start_time);
+	const end = formatTime(activity.end_time);
 
-      <h5 style="margin-top: 10px;">Dateien</h5>
+	let timeDisplay = "-";
+	if (start && end) {
+		timeDisplay = `${start} – ${end}`;
+	} else if (start) {
+		timeDisplay = start;
+	}
 
-      ${activity.files.length === 0
-        ? "<p>Keine Dateien vorhanden.</p>"
-        : activity.files.map(renderFile).join("")}
+	return `
+    <div class="activity-card">
+      <p class="activity-title"><strong>${activity.title}</strong></p>
+      <p class="activity-time">${timeDisplay}</p>
+      <h5 class="activity-files-title">Dateien</h5>
+
+      ${
+				activity.files.length === 0
+					? `<p class="text-muted">Keine Dateien vorhanden.</p>`
+					: activity.files.map(renderFile).join("")
+			}
     </div>
   `;
 }
 
 function renderFile(file) {
-  return `
-    <div style="margin: 4px 0 4px 10px;">
+	return `
+
+
+
+
+    <div class="activity-file">
       <a href="${file.file_url}" target="_blank">${file.file_name}</a>
     </div>
   `;
 }
 
 function formatDate(str) {
-  if (!str) return "-";
-  return new Date(str).toLocaleDateString();
+	if (!str) return "-";
+	return new Date(str).toLocaleDateString();
+}
+
+function formatTime(timeStr) {
+	if (!timeStr) return null;
+	return timeStr.slice(0, 5); // HH:MM
 }

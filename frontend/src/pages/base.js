@@ -1,5 +1,5 @@
 export function renderBaseLayout({ mount }) {
-  mount.innerHTML = `
+	mount.innerHTML = `
     <div class="layout">
       <header class="topbar">
         <div class="brand" role="banner">

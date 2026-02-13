@@ -10,6 +10,7 @@ app.include_router(api_router)
 
 # CORS enables that the frontend (running on a different origin/port) can access
 # the API without being blocked by the browser’s same‑origin policy.
+
 origins = ["*"]
 app.add_middleware(
     CORSMiddleware,

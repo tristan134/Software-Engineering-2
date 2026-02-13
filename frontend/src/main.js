@@ -2,44 +2,46 @@ import "./css/root.css";
 import "./css/utilities.css";
 import { renderBaseLayout } from "./pages/base.js";
 import { renderDashboardPage } from "./pages/dashboard.js";
-import { renderNewJourney } from "./pages/newjourney.js";
 import { renderFullJourney } from "./pages/fulljourney.js";
+import { renderNewJourney } from "./pages/newjourney.js";
 
 const routes = {
-  "#/": renderDashboardPage,
-  "#/newjourney": renderNewJourney,
-  "#/fulljourney": renderFullJourney,
+	"#/": renderDashboardPage,
+	"#/newjourney": renderNewJourney,
+	"#/fulljourney": renderFullJourney,
 };
 
 function navigate(hash) {
-  window.location.hash = hash;
+	window.location.hash = hash;
 }
 
 function ensureLayout() {
-  const app = document.querySelector("#app");
+	const app = document.querySelector("#app");
 
-  // Layout nur einmal rendern
-  if (!document.querySelector("#page-content")) {
-    renderBaseLayout({ mount: app });
-  }
+	// Layout nur einmal rendern
+	if (!document.querySelector("#page-content")) {
+		renderBaseLayout({ mount: app });
+	}
 
-  return document.querySelector("#page-content");
+	return document.querySelector("#page-content");
 }
 
 function render() {
-  const hash = window.location.hash || "#/";
-  const contentMount = ensureLayout();
+	const hash = window.location.hash || "#/";
 
-  window.scrollTo(0, 0);
+	const contentMount = ensureLayout();
 
-  if (hash.startsWith("#/fulljourney/")) {
-    return renderFullJourney({ mount: contentMount, navigate });
-  }
+	window.scrollTo(0, 0);
 
-  const page = routes[hash] || routes["#/"];
-  page({ mount: contentMount, navigate });
+	if (hash.startsWith("#/fulljourney/")) {
+		return renderFullJourney({ mount: contentMount, navigate });
+	}
+
+	const page = routes[hash] || routes["#/"];
+
+	page({ mount: contentMount, navigate });
 }
 
-
 window.addEventListener("hashchange", render);
+
 render();
