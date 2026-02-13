@@ -50,6 +50,9 @@ async function loadJourneys() {
                 <button class = "btn" onclick="showFullJourney(${
 									j.id
 								})">👀</button>
+                <button class = "btn" onclick="editJourney(${
+									j.id
+								})">Bearbeiten</button>
             </div>
           </div>
         </div>
@@ -86,3 +89,9 @@ async function deleteJourney(id) {
 }
 
 window.deleteJourney = deleteJourney;
+
+function editJourney(id) {
+	// Navigiert zur Edit-Seite
+	window.location.hash = `#/editjourney/${id}`;
+}
+window.editJourney = editJourney;

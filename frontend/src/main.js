@@ -2,6 +2,7 @@ import "./css/root.css";
 import "./css/utilities.css";
 import { renderBaseLayout } from "./pages/base.js";
 import { renderDashboardPage } from "./pages/dashboard.js";
+import { renderEditJourney } from "./pages/editjourney.js";
 import { renderFullJourney } from "./pages/fulljourney.js";
 import { renderNewJourney } from "./pages/newjourney.js";
 
@@ -9,6 +10,7 @@ const routes = new Map([
 	["#/", renderDashboardPage],
 	["#/newjourney", renderNewJourney],
 	["#/fulljourney", renderFullJourney],
+	["#/editjourney", renderEditJourney],
 ]);
 
 function navigate(hash) {
@@ -35,6 +37,10 @@ function render() {
 
 	if (hash.startsWith("#/fulljourney/")) {
 		return renderFullJourney({ mount: contentMount, navigate });
+	}
+
+	if (hash.startsWith("#/editjourney/")) {
+		return renderEditJourney({ mount: contentMount, navigate });
 	}
 
 	const page = routes.get(hash) ?? routes.get("#/");
