@@ -10,7 +10,7 @@ export async function renderFullJourney({ mount }) {
 	}
 
 	try {
-		const res = await fetch(`http://localhost:8000/api/v1/journeys/${id}`);
+		const res = await fetch(`http://localhost:8000/api/v1/journey/${id}`);
 
 		if (!res.ok) {
 			mount.innerHTML = `<p class="alert alert-error">❌ Reise konnte nicht geladen werden.</p>`;
