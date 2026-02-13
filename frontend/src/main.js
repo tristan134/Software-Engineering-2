@@ -37,7 +37,12 @@ function render() {
 		return renderFullJourney({ mount: contentMount, navigate });
 	}
 
-	const page = routes[hash] || routes["#/"];
+	let page;
+	if (Object.prototype.hasOwnProperty.call(routes, hash) && typeof routes[hash] === "function") {
+		page = routes[hash];
+	} else {
+		page = routes["#/"];
+	}
 
 	page({ mount: contentMount, navigate });
 }
