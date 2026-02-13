@@ -5,11 +5,11 @@ import { renderDashboardPage } from "./pages/dashboard.js";
 import { renderFullJourney } from "./pages/fulljourney.js";
 import { renderNewJourney } from "./pages/newjourney.js";
 
-const routes = {
-	"#/": renderDashboardPage,
-	"#/newjourney": renderNewJourney,
-	"#/fulljourney": renderFullJourney,
-};
+const routes = new Map([
+  ["#/", renderDashboardPage],
+  ["#/newjourney", renderNewJourney],
+  ["#/fulljourney", renderFullJourney],
+]);
 
 function navigate(hash) {
 	window.location.hash = hash;
@@ -37,14 +37,9 @@ function render() {
 		return renderFullJourney({ mount: contentMount, navigate });
 	}
 
-	let page;
-	if (Object.prototype.hasOwnProperty.call(routes, hash) && typeof routes[hash] === "function") {
-		page = routes[hash];
-	} else {
-		page = routes["#/"];
-	}
-
+	const page = routes.get(hash) ?? routes.get("#/");
 	page({ mount: contentMount, navigate });
+
 }
 
 window.addEventListener("hashchange", render);
