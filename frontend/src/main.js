@@ -38,8 +38,16 @@ function render() {
 	}
 
 	const page = routes.get(hash) ?? routes.get("#/");
-	page({ mount: contentMount, navigate });
 
+	if (typeof page === "function") {
+		page({ mount: contentMount, navigate });
+		return;
+	}
+
+	const defaultPage = routes.get("#/");
+	if (typeof defaultPage === "function") {
+		defaultPage({ mount: contentMount, navigate });
+	}
 }
 
 window.addEventListener("hashchange", render);
