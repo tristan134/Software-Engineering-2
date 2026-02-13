@@ -83,6 +83,13 @@
 	color: var(--color-text-muted);
 }
 
+.journey-price {
+	text-align: center;
+	font-size: 1.6rem;
+	font-weight: 600;
+	color: var(--color-text-muted);
+}
+
 /* =====================================================
    Timeline
    ===================================================== */

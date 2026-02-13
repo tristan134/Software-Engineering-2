@@ -15,7 +15,7 @@ export function renderNewJourney({ mount }) {
 
         <div class="form-group">
           <label class="label" for="price">Gesamtpreis (optional)</label>
-          <input id="price" name="price" type="number" min="0" placeholder="3000" class="input" />
+			<input id="price" name="price" type="number" min="0" max="99999.99" step="0.01" class="input" placeholder="z.B 1000 oder 1000.50"/>
         </div>
 
         <div class="flex gap-md mb-md" style="flex-wrap: wrap;">

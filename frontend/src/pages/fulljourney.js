@@ -30,13 +30,12 @@ export async function renderFullJourney({ mount }) {
                 <p class="journey-description">
                     ${journey.description || "Keine Beschreibung"}
                 </p>
-
+                
                 <div class="journey-flight-timeline">
 
                     <div class="flight-item">
                         <span class="flight-icon">🛫</span>
                         <div>
-                            <div class="flight-label">Abflug</div>
                             <div class="flight-date">${formatDate(journey.start_date)}</div>
                         </div>
                     </div>
@@ -46,12 +45,16 @@ export async function renderFullJourney({ mount }) {
                     <div class="flight-item">
                         <span class="flight-icon">🛬</span>
                         <div>
-                            <div class="flight-label">Ankunft</div>
                             <div class="flight-date">${formatDate(journey.end_date)}</div>
                         </div>
                     </div>
 
                 </div>
+                
+				<p class="journey-price">
+					${formatPrice(journey.price)}
+				</p>
+
 
             </div>
             <div class="timeline">
@@ -124,6 +127,13 @@ function renderFile(file) {
         <a href="${file.file_url}" target="_blank">${file.file_name}</a>
     </div>
     `;
+}
+
+function formatPrice(p) {
+	if (p == null) return "-";
+	const num = Number(p);
+	if (Number.isNaN(num)) return p;
+	return `${num.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €`;
 }
 
 function formatDate(str) {

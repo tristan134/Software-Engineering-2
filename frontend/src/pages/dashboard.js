@@ -37,21 +37,13 @@ async function loadJourneys() {
           <div class="card">
             <h3>${j.title}</h3>
             <p>${j.description || "Keine Beschreibung"}</p>
-            <p><strong>Preis:</strong> ${j.price} €</p>
-            <p><strong>Start:</strong> ${new Date(
-							j.start_date,
-						).toLocaleDateString()}</p>
-            <p><strong>Ende:</strong> ${new Date(
-							j.end_date,
-						).toLocaleDateString()}</p>
+            <p><strong>Preis:</strong> ${formatPrice(j.price)}</p>
+            <p><strong>Start:</strong> ${new Date(j.start_date).toLocaleDateString()}</p>
+            <p><strong>Ende:</strong> ${new Date(j.end_date).toLocaleDateString()}</p>
             
             <div>
-                <button class = "btn" onclick="deleteJourney(${
-									j.id
-								})">🗑️</button>
-                <button class = "btn" onclick="showFullJourney(${
-									j.id
-								})">👀</button>
+                <button class = "btn" onclick="deleteJourney(${j.id})">🗑️</button>
+                <button class = "btn" onclick="showFullJourney(${j.id})">👀</button>
             </div>
           </div>
         </div>
@@ -63,14 +55,19 @@ async function loadJourneys() {
 		console.error(err);
 	}
 }
+
+function formatPrice(p) {
+	if (p == null) return "-";
+	const num = Number(p);
+	if (Number.isNaN(num)) return p;
+	return `${num.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €`;
+}
+
 function showFullJourney(id) {
 	window.location.hash = `#/fulljourney/${id}`;
 }
 window.showFullJourney = showFullJourney;
 
-// ------------------------------------------------------
-// LÖSCHEN EINER REISE
-// ------------------------------------------------------
 async function deleteJourney(id) {
 	if (!confirm("Soll diese Reise wirklich gelöscht werden?")) {
 		return;
@@ -86,5 +83,4 @@ async function deleteJourney(id) {
 		console.error("Fehler beim Löschen:", err);
 	}
 }
-
 window.deleteJourney = deleteJourney;
