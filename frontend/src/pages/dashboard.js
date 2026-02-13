@@ -1,7 +1,9 @@
+import "../css/dashboard.css";
+
 export function renderDashboardPage({ mount }) {
 	mount.innerHTML = `
     <section class="landing">
-      <h1>🌍 Reiseplaner TESt</h1>
+      <h1>J<i class="fa-solid fa-location-dot"></i>urneo</h1>
       <div id="journeys"></div>
     </section>
   `;
@@ -35,13 +37,9 @@ async function loadJourneys() {
           <div class="card">
             <h3>${j.title}</h3>
             <p>${j.description || "Keine Beschreibung"}</p>
-            <p><strong>Preis:</strong> ${j.price} €</p>
-            <p><strong>Start:</strong> ${new Date(
-							j.start_date,
-						).toLocaleDateString()}</p>
-            <p><strong>Ende:</strong> ${new Date(
-							j.end_date,
-						).toLocaleDateString()}</p>
+            <p><strong>Preis:</strong> ${formatPrice(j.price)}</p>
+            <p><strong>Start:</strong> ${new Date(j.start_date).toLocaleDateString()}</p>
+            <p><strong>Ende:</strong> ${new Date(j.end_date).toLocaleDateString()}</p>
             
             <div>
                 <button class = "btn" onclick="deleteJourney(${
@@ -64,14 +62,19 @@ async function loadJourneys() {
 		console.error(err);
 	}
 }
+
+function formatPrice(p) {
+	if (p == null) return "-";
+	const num = Number(p);
+	if (Number.isNaN(num)) return p;
+	return `${num.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €`;
+}
+
 function showFullJourney(id) {
 	window.location.hash = `#/fulljourney/${id}`;
 }
 window.showFullJourney = showFullJourney;
 
-// ------------------------------------------------------
-// LÖSCHEN EINER REISE
-// ------------------------------------------------------
 async function deleteJourney(id) {
 	if (!confirm("Soll diese Reise wirklich gelöscht werden?")) {
 		return;
@@ -87,7 +90,6 @@ async function deleteJourney(id) {
 		console.error("Fehler beim Löschen:", err);
 	}
 }
-
 window.deleteJourney = deleteJourney;
 
 function editJourney(id) {

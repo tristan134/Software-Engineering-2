@@ -4,7 +4,8 @@
 :root {
 	/* Grundfarben */
 	--color-bg: #faf0e6;
-	--color-surface: #fff8f0;
+	--color-surface: #ffffff;
+	--color-activities-surface: #fff8f0;
 
 	/* Primärfarben */
 	--color-primary: #dcc191;
@@ -23,8 +24,8 @@
 	--space-lg: 24px;
 
 	/* Rundungen & Schatten */
-	--radius-sm: 6px;
-	--radius-md: 10px;
+	--radius-sm: 12px;
+	--radius-md: 20px;
 
 	--shadow-sm: 0 1px 3px rgba(59, 47, 37, 0.12);
 	--shadow-md: 0 8px 20px rgba(59, 47, 37, 0.15);
