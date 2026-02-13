@@ -6,9 +6,9 @@ import { renderFullJourney } from "./pages/fulljourney.js";
 import { renderNewJourney } from "./pages/newjourney.js";
 
 const routes = new Map([
-  ["#/", renderDashboardPage],
-  ["#/newjourney", renderNewJourney],
-  ["#/fulljourney", renderFullJourney],
+	["#/", renderDashboardPage],
+	["#/newjourney", renderNewJourney],
+	["#/fulljourney", renderFullJourney],
 ]);
 
 function navigate(hash) {
