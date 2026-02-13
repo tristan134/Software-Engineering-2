@@ -2,42 +2,42 @@
    Design
    ========================= */
 :root {
-  /* Grundfarben */
-  --color-bg: #faf0e6;
-  --color-surface: #fff8f0;
+	/* Grundfarben */
+	--color-bg: #faf0e6;
+	--color-surface: #fff8f0;
 
-  /* Primärfarben */
-  --color-primary: #dcc191;
-  --color-primary-light: #9a7b5f;
-  --color-accent: #e6ad7c;
+	/* Primärfarben */
+	--color-primary: #dcc191;
+	--color-primary-light: #9a7b5f;
+	--color-accent: #e6ad7c;
 
-  /* Text */
-  --color-text: #3e3127;
-  --color-text-muted: #7a6652;
-  --color-border: #e4d6c8;
+	/* Text */
+	--color-text: #3e3127;
+	--color-text-muted: #7a6652;
+	--color-border: #e4d6c8;
 
-  /* Abstände */
-  --space-xs: 6px;
-  --space-sm: 10px;
-  --space-md: 16px;
-  --space-lg: 24px;
+	/* Abstände */
+	--space-xs: 6px;
+	--space-sm: 10px;
+	--space-md: 16px;
+	--space-lg: 24px;
 
-  /* Rundungen & Schatten */
-  --radius-sm: 6px;
-  --radius-md: 10px;
+	/* Rundungen & Schatten */
+	--radius-sm: 6px;
+	--radius-md: 10px;
 
-  --shadow-sm: 0 1px 3px rgba(59, 47, 37, 0.12);
-  --shadow-md: 0 8px 20px rgba(59, 47, 37, 0.15);
+	--shadow-sm: 0 1px 3px rgba(59, 47, 37, 0.12);
+	--shadow-md: 0 8px 20px rgba(59, 47, 37, 0.15);
 
-  /* Schrift */
-  --font-base: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, sans-serif;
+	/* Schrift */
+	--font-base:
+		"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		sans-serif;
 
-  --space-xl: 32px;
-  --control-h: 42px;
-  --focus-ring: 0 0 0 3px rgba(220, 193, 145, 0.35);
+	--space-xl: 32px;
+	--control-h: 42px;
+	--focus-ring: 0 0 0 3px rgba(220, 193, 145, 0.35);
 }
-
 
 /* =========================
    Base Styles
@@ -45,31 +45,30 @@
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 html,
 body {
-  margin: 0;
-  padding: 0;
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-base);
+	margin: 0;
+	padding: 0;
+	background: var(--color-bg);
+	color: var(--color-text);
+	font-family: var(--font-base);
 }
 
-
 .layout {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
 }
 
 .content {
-  flex: 1;
-  padding: var(--space-lg);
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
+	flex: 1;
+	padding: var(--space-lg);
+	max-width: 1200px;
+	margin: 0 auto;
+	width: 100%;
 }
 
 /* =========================
@@ -77,25 +76,25 @@ body {
    ========================= */
 
 .topbar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
+	position: sticky;
+	top: 0;
+	z-index: 100;
 
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
 
-  padding: var(--space-sm) var(--space-lg);
-  background: var(--color-primary);
-  box-shadow: var(--shadow-sm);
+	padding: var(--space-sm) var(--space-lg);
+	background: var(--color-primary);
+	box-shadow: var(--shadow-sm);
 }
 
 .brand-link {
-  color: white;
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: 0.2px;
+	color: white;
+	text-decoration: none;
+	font-weight: 700;
+	font-size: 1.1rem;
+	letter-spacing: 0.2px;
 }
 
 /* =========================
@@ -103,30 +102,30 @@ body {
    ========================= */
 
 .nav {
-  display: flex;
-  gap: var(--space-xs);
+	display: flex;
+	gap: var(--space-xs);
 }
 
 .nav a {
-  color: white;
-  text-decoration: none;
+	color: white;
+	text-decoration: none;
 
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
+	padding: 6px 12px;
+	border-radius: var(--radius-sm);
 
-  font-size: 0.95rem;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
+	font-size: 0.95rem;
+	transition:
+		background 0.2s ease,
+		color 0.2s ease;
 }
 
 .nav a:hover {
-  background: var(--color-primary-light);
+	background: var(--color-primary-light);
 }
 
 .nav a.active {
-  background: var(--color-accent);
-  color: white;
+	background: var(--color-accent);
+	color: white;
 }
 
 /* =========================
@@ -134,9 +133,9 @@ body {
    ========================= */
 
 .footer {
-  padding: var(--space-sm) var(--space-lg);
-  border-top: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  font-size: 0.85rem;
+	padding: var(--space-sm) var(--space-lg);
+	border-top: 1px solid var(--color-border);
+	background: var(--color-surface);
+	color: var(--color-text-muted);
+	font-size: 0.85rem;
 }

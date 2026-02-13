@@ -1,5 +1,5 @@
 export function renderNewJourney({ mount }) {
-  mount.innerHTML = `
+	mount.innerHTML = `
     <section class="landing">
       <h1>Reise anlegen</h1>
       <p class="text-muted mb-md">Lege zuerst die Reise an, dann füge Tage & Aktivitäten hinzu.</p>
@@ -58,45 +58,45 @@ export function renderNewJourney({ mount }) {
     </section>
   `;
 
-  const form = mount.querySelector("#newJourneyForm");
-  const journeyStatus = mount.querySelector("#journeyStatus");
+	const form = mount.querySelector("#newJourneyForm");
+	const journeyStatus = mount.querySelector("#journeyStatus");
 
-  const daysCard = mount.querySelector("#daysCard");
-  const addDayBtn = mount.querySelector("#addDayBtn");
-  const daysList = mount.querySelector("#daysList");
-  const daysStatus = mount.querySelector("#daysStatus");
+	const daysCard = mount.querySelector("#daysCard");
+	const addDayBtn = mount.querySelector("#addDayBtn");
+	const daysList = mount.querySelector("#daysList");
+	const daysStatus = mount.querySelector("#daysStatus");
 
-  let journeyId = null;
-  let dayCounter = 0;
+	let journeyId = null;
+	let dayCounter = 0;
 
-  function setStatus(el, text, type) {
-    el.textContent = text || "";
-    el.className = `form-status ${type || ""}`;
-  }
+	function setStatus(el, text, type) {
+		el.textContent = text || "";
+		el.className = `form-status ${type || ""}`;
+	}
 
-  function escapeHtml(str) {
-    return String(str ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
+	function escapeHtml(str) {
+		return String(str ?? "")
+			.replaceAll("&", "&amp;")
+			.replaceAll("<", "&lt;")
+			.replaceAll(">", "&gt;")
+			.replaceAll('"', "&quot;")
+			.replaceAll("'", "&#039;");
+	}
 
-  function fmtTime(t) {
-    return t ? String(t).slice(0, 5) : "";
-  }
+	function fmtTime(t) {
+		return t ? String(t).slice(0, 5) : "";
+	}
 
-  function ensureJourneySaved() {
-    if (!journeyId) {
-      setStatus(daysStatus, "Bitte zuerst die Reise speichern.", "error");
-      return false;
-    }
-    return true;
-  }
+	function ensureJourneySaved() {
+		if (!journeyId) {
+			setStatus(daysStatus, "Bitte zuerst die Reise speichern.", "error");
+			return false;
+		}
+		return true;
+	}
 
-  function dayTemplate({ localId, index }) {
-    return `
+	function dayTemplate({ localId, index }) {
+		return `
       <div class="card" data-day-card="${localId}" style="padding: 14px;">
         <div class="actions mb-md">
           <div class="card-title">Tag ${index}</div>
@@ -156,379 +156,483 @@ export function renderNewJourney({ mount }) {
         </div>
       </div>
     `;
-  }
+	}
 
-  function renderActivities(listEl, activities) {
-    const acts = (activities || []).slice().sort((a, b) => {
-      const at = a.start_time || "";
-      const bt = b.start_time || "";
-      if (at < bt) return -1;
-      if (at > bt) return 1;
-      return (a.title || "").localeCompare(b.title || "");
-    });
+	function renderActivities(listEl, activities) {
+		const acts = (activities || []).slice().sort((a, b) => {
+			const at = a.start_time || "";
+			const bt = b.start_time || "";
+			if (at < bt) return -1;
+			if (at > bt) return 1;
+			return (a.title || "").localeCompare(b.title || "");
+		});
 
-    if (!acts.length) {
-      listEl.innerHTML = `<p class="text-muted">Noch keine Aktivitäten.</p>`;
-      return;
-    }
+		if (!acts.length) {
+			listEl.innerHTML = `<p class="text-muted">Noch keine Aktivitäten.</p>`;
+			return;
+		}
 
-    listEl.innerHTML = `
+		listEl.innerHTML = `
       <div class="flex flex-column" style="gap: 10px;">
-        ${acts.map((a) => {
-          const timeText =
-            a.start_time || a.end_time
-              ? `${fmtTime(a.start_time)}${a.end_time ? ` Uhr – ${fmtTime(a.end_time)} Uhr` : ""}`
-              : "ohne Uhrzeit";
-  
-          return `
+        ${acts
+					.map((a) => {
+						const timeText =
+							a.start_time || a.end_time
+								? `${fmtTime(a.start_time)}${
+										a.end_time ? ` Uhr – ${fmtTime(a.end_time)} Uhr` : ""
+									}`
+								: "ohne Uhrzeit";
+
+						return `
             <div class="card activity-item" data-activity-id="${a.id}">
               <div class="activity-row">
                 <div class="activity-title">${escapeHtml(a.title)}</div>
   
                 <div class="activity-right">
                   <div class="activity-time">${escapeHtml(timeText)}</div>
-                  <button class="btn btn-secondary btn-sm" type="button" data-edit-activity="${a.id}">Bearbeiten</button>
-                  <button class="btn btn-secondary btn-sm" type="button" data-delete-activity="${a.id}">Löschen</button>
+                  <button class="btn btn-secondary btn-sm" type="button" data-edit-activity="${
+										a.id
+									}">Bearbeiten</button>
+                  <button class="btn btn-secondary btn-sm" type="button" data-delete-activity="${
+										a.id
+									}">Löschen</button>
                 </div>
               </div>
             </div>
           `;
-        }).join("")}
+					})
+					.join("")}
       </div>
     `;
-  }
-
-
-  function wireDayCard(dayCardEl) {
-    const localId = dayCardEl.getAttribute("data-day-card");
-
-    const dayForm = dayCardEl.querySelector(`[data-day-form="${localId}"]`);
-    const dayStatusEl = dayCardEl.querySelector(`[data-day-status="${localId}"]`);
-
-    const activityForm = dayCardEl.querySelector(`[data-activity-form="${localId}"]`);
-    const actStatusEl = dayCardEl.querySelector(`[data-activity-status="${localId}"]`);
-    const activitiesListEl = dayCardEl.querySelector(`[data-activities-list="${localId}"]`);
-    const addActivityBtn = dayCardEl.querySelector(`[data-add-activity="${localId}"]`);
-
-    const editDayBtn = dayCardEl.querySelector(`[data-edit-day="${localId}"]`);
-    const deleteDayBtn = dayCardEl.querySelector(`[data-delete-day="${localId}"]`);
-    const dayTitleEl = dayCardEl.querySelector(`[data-day-title="${localId}"]`);
-
-
-    let savedDayId = null;
-    let activities = [];
-    let editingActivityId = null;
-    let isEditingDay = false;
-
-    deleteDayBtn.addEventListener("click", async () => {
-      // Wenn Tag noch nicht gespeichert: einfach Card entfernen
-      if (!savedDayId) {
-        if (!confirm("Diesen Tag-Entwurf entfernen?")) return;
-        dayCardEl.remove();
-        return;
-      }
-
-      if (!confirm("Tag wirklich löschen? (Alle Aktivitäten dieses Tages werden mitgelöscht)")) return;
-
-      setStatus(dayStatusEl, "Lösche Tag…", "loading");
-
-      try {
-        const res = await fetch(`http://localhost:8000/api/v1/days/${savedDayId}`, {
-          method: "DELETE",
-        });
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setStatus(dayStatusEl, data?.detail || "Fehler beim Löschen des Tages.", "error");
-          return;
-        }
-
-        // UI entfernen
-        dayCardEl.remove();
-      } catch (err) {
-        console.error(err);
-        setStatus(dayStatusEl, "Netzwerkfehler – bitte erneut versuchen.", "error");
-      }
-    });
-
-
-    editDayBtn.addEventListener("click", () => {
-      if (!savedDayId) {
-        setStatus(dayStatusEl, "Bitte zuerst den Tag speichern.", "error");
-        return;
-      }
-
-      isEditingDay = !isEditingDay;
-
-      const inputs = dayForm.querySelectorAll("input");
-      inputs.forEach((i) => (i.disabled = !isEditingDay));
-
-      const submitBtn = dayForm.querySelector("button[type='submit']");
-      submitBtn.disabled = false;
-      submitBtn.textContent = isEditingDay ? "Änderungen speichern" : "Tag speichern";
-
-      setStatus(
-        dayStatusEl,
-        isEditingDay ? "Bearbeitungsmodus aktiv." : "Bearbeitungsmodus beendet.",
-        isEditingDay ? "loading" : ""
-      );
-    });
-
-
-
-    activitiesListEl.addEventListener("click", async (e) => {
-      const delBtn = e.target.closest("[data-delete-activity]");
-      const editBtn = e.target.closest("[data-edit-activity]");
-
-      // Löschen
-      if (delBtn) {
-        const activityId = Number(delBtn.getAttribute("data-delete-activity"));
-        if (!activityId) return;
-
-        if (!confirm("Aktivität wirklich löschen?")) return;
-
-        setStatus(actStatusEl, "Lösche Aktivität…", "loading");
-
-        try {
-          const res = await fetch(`http://localhost:8000/api/v1/activities/${activityId}/`, {
-            method: "DELETE",
-          });
-
-          if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            setStatus(actStatusEl, data?.detail || "Fehler beim Löschen.", "error");
-            return;
-          }
-
-          activities = activities.filter((a) => a.id !== activityId);
-          renderActivities(activitiesListEl, activities);
-          setStatus(actStatusEl, "Aktivität gelöscht.", "success");
-        } catch (err) {
-          console.error(err);
-          setStatus(actStatusEl, "Netzwerkfehler – bitte erneut versuchen.", "error");
-        }
-        return;
-      }
-
-      // Bearbeiten
-      if (editBtn) {
-        const activityId = Number(editBtn.getAttribute("data-edit-activity"));
-        const act = activities.find((x) => x.id === activityId);
-        if (!act) return;
-
-        editingActivityId = activityId;
-        activityForm.style.display = "block";
-
-        activityForm.querySelector("[name='title']").value = act.title || "";
-        activityForm.querySelector("[name='start_time']").value = fmtTime(act.start_time);
-        activityForm.querySelector("[name='end_time']").value = fmtTime(act.end_time);
-
-        setStatus(actStatusEl, "Bearbeitungsmodus: Änderungen speichern.", "loading");
-      }
-    });
-
-
-    addActivityBtn.addEventListener("click", () => {
-      if (!savedDayId) {
-        setStatus(dayStatusEl, "Bitte zuerst den Tag speichern.", "error");
-        return;
-      }
-      activityForm.style.display = activityForm.style.display === "none" ? "block" : "none";
-    });
-
-    dayForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!ensureJourneySaved()) return;
-
-      const fd = new FormData(dayForm);
-      const payloadCreate = {
-        journey_id: journeyId,
-        title: (fd.get("title") || "").toString(),
-        date: (fd.get("date") || "").toString(),
-      };
-
-      const payloadUpdate = {
-        title: (fd.get("title") || "").toString(),
-        date: (fd.get("date") || "").toString(),
-      };
-
-      const isUpdate = Boolean(savedDayId);
-      const url = isUpdate
-        ? `http://localhost:8000/api/v1/days/${savedDayId}/`
-        : `http://localhost:8000/api/v1/days/`;
-
-      const method = isUpdate ? "PUT" : "POST";
-      const payload = isUpdate ? payloadUpdate : payloadCreate;
-
-      setStatus(dayStatusEl, isUpdate ? "Aktualisiere Tag…" : "Speichere Tag…", "loading");
-
-      try {
-        const res = await fetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-          setStatus(dayStatusEl, data?.detail || (isUpdate ? "Fehler beim Aktualisieren." : "Fehler beim Speichern."), "error");
-          return;
-        }
-
-        // Bei Create: ID merken
-        if (!savedDayId) savedDayId = data.id;
-
-        // Nach Save: wieder sperren
-        dayForm.querySelectorAll("input").forEach((i) => (i.disabled = true));
-
-        const submitBtn = dayForm.querySelector("button[type='submit']");
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Tag speichern";
-
-        isEditingDay = false;
-
-        // Optional: Titelanzeige hübsch aktualisieren
-        if (dayTitleEl) dayTitleEl.textContent = `Tag ${localId}`;
-
-        setStatus(dayStatusEl, isUpdate ? "Tag aktualisiert!" : "Tag gespeichert!", "success");
-
-        // Activity-Form bleibt wie bei dir: erst nach Save sinnvoll
-        activityForm.style.display = "none";
-      } catch (err) {
-        console.error(err);
-        setStatus(dayStatusEl, "Netzwerkfehler – bitte erneut versuchen.", "error");
-      }
-    });
-
-
-    activityForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!savedDayId) return;
-
-      const fd = new FormData(activityForm);
-
-      const payloadCreate = {
-        day_id: savedDayId,
-        title: (fd.get("title") || "").toString(),
-        start_time: (fd.get("start_time") || "").toString() || null,
-        end_time: (fd.get("end_time") || "").toString() || null,
-      };
-
-      const payloadUpdate = {
-        title: (fd.get("title") || "").toString(),
-        start_time: (fd.get("start_time") || "").toString() || null,
-        end_time: (fd.get("end_time") || "").toString() || null,
-      };
-
-      const isEdit = Boolean(editingActivityId);
-      const url = isEdit
-        ? `http://localhost:8000/api/v1/activities/${editingActivityId}/`
-        : `http://localhost:8000/api/v1/activities/`;
-
-      const method = isEdit ? "PUT" : "POST";
-      const payload = isEdit ? payloadUpdate : payloadCreate;
-
-      setStatus(actStatusEl, isEdit ? "Aktualisiere Aktivität…" : "Speichere Aktivität…", "loading");
-
-      try {
-        const res = await fetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-          setStatus(actStatusEl, data?.detail || (isEdit ? "Fehler beim Aktualisieren." : "Fehler beim Speichern."), "error");
-          return;
-        }
-
-        if (isEdit) {
-          activities = activities.map((a) => (a.id === editingActivityId ? data : a));
-          editingActivityId = null;
-          setStatus(actStatusEl, "Aktivität aktualisiert!", "success");
-        } else {
-          activities.push(data);
-          setStatus(actStatusEl, "Aktivität gespeichert!", "success");
-        }
-
-        renderActivities(activitiesListEl, activities);
-        activityForm.reset();
-        activityForm.style.display = "none";
-      } catch (err) {
-        console.error(err);
-        setStatus(actStatusEl, "Netzwerkfehler – bitte erneut versuchen.", "error");
-      }
-    });
-
-    renderActivities(activitiesListEl, activities);
-
-  }
-
-  // Journey erstellen
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    setStatus(journeyStatus, "Speichere Reise…", "loading");
-
-    const fd = new FormData(form);
-    const payload = {
-      title: (fd.get("title") || "").toString(),
-      price: (fd.get("price") || "").toString() || null,
-      start_date: (fd.get("start_date") || "").toString() || null,
-      end_date: (fd.get("end_date") || "").toString() || null,
-      description: (fd.get("description") || "").toString() || null,
-    };
-
-    try {
-      const res = await fetch("http://localhost:8000/api/v1/journey", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setStatus(journeyStatus, data?.detail || "Fehler beim Anlegen der Reise.", "error");
-        return;
-      }
-
-      journeyId = data.id;
-      //Auch wenn ungenutzt, lassen sonst lässt sich eine Reise nicht anlegen, da die Tage-Sektion die ID braucht
-      let createdJourney = null;
-      createdJourney = data;
-
-      setStatus(journeyStatus, "Reise gespeichert! Jetzt Tage hinzufügen.", "success");
-
-      form.querySelectorAll("input, textarea, button[type='submit']").forEach((el) => (el.disabled = true));
-
-      // Tage-Sektion anzeigen
-      daysCard.style.display = "block";
-      setStatus(daysStatus, "", "");
-
-    } catch (err) {
-      console.error(err);
-      setStatus(journeyStatus, "Netzwerkfehler – bitte erneut versuchen.", "error");
-    }
-  });
-
-  // UI für Tag hinzufügen
-  addDayBtn.addEventListener("click", () => {
-    if (!ensureJourneySaved()) return;
-
-    dayCounter += 1;
-    const localId = String(dayCounter);
-
-    const wrapper = document.createElement("div");
-    wrapper.innerHTML = dayTemplate({ localId, index: dayCounter });
-    const dayCardEl = wrapper.firstElementChild;
-
-    daysList.appendChild(dayCardEl);
-    wireDayCard(dayCardEl);
-
-    setStatus(daysStatus, "", "");
-  });
+	}
+
+	function wireDayCard(dayCardEl) {
+		const localId = dayCardEl.getAttribute("data-day-card");
+
+		const dayForm = dayCardEl.querySelector(`[data-day-form="${localId}"]`);
+		const dayStatusEl = dayCardEl.querySelector(
+			`[data-day-status="${localId}"]`,
+		);
+
+		const activityForm = dayCardEl.querySelector(
+			`[data-activity-form="${localId}"]`,
+		);
+		const actStatusEl = dayCardEl.querySelector(
+			`[data-activity-status="${localId}"]`,
+		);
+		const activitiesListEl = dayCardEl.querySelector(
+			`[data-activities-list="${localId}"]`,
+		);
+		const addActivityBtn = dayCardEl.querySelector(
+			`[data-add-activity="${localId}"]`,
+		);
+
+		const editDayBtn = dayCardEl.querySelector(`[data-edit-day="${localId}"]`);
+		const deleteDayBtn = dayCardEl.querySelector(
+			`[data-delete-day="${localId}"]`,
+		);
+		const dayTitleEl = dayCardEl.querySelector(`[data-day-title="${localId}"]`);
+
+		let savedDayId = null;
+		let activities = [];
+		let editingActivityId = null;
+		let isEditingDay = false;
+
+		deleteDayBtn.addEventListener("click", async () => {
+			// Wenn Tag noch nicht gespeichert: einfach Card entfernen
+			if (!savedDayId) {
+				if (!confirm("Diesen Tag-Entwurf entfernen?")) return;
+				dayCardEl.remove();
+				return;
+			}
+
+			if (
+				!confirm(
+					"Tag wirklich löschen? (Alle Aktivitäten dieses Tages werden mitgelöscht)",
+				)
+			)
+				return;
+
+			setStatus(dayStatusEl, "Lösche Tag…", "loading");
+
+			try {
+				const res = await fetch(
+					`http://localhost:8000/api/v1/days/${savedDayId}`,
+					{
+						method: "DELETE",
+					},
+				);
+
+				if (!res.ok) {
+					const data = await res.json().catch(() => ({}));
+					setStatus(
+						dayStatusEl,
+						data?.detail || "Fehler beim Löschen des Tages.",
+						"error",
+					);
+					return;
+				}
+
+				// UI entfernen
+				dayCardEl.remove();
+			} catch (err) {
+				console.error(err);
+				setStatus(
+					dayStatusEl,
+					"Netzwerkfehler – bitte erneut versuchen.",
+					"error",
+				);
+			}
+		});
+
+		editDayBtn.addEventListener("click", () => {
+			if (!savedDayId) {
+				setStatus(dayStatusEl, "Bitte zuerst den Tag speichern.", "error");
+				return;
+			}
+
+			isEditingDay = !isEditingDay;
+
+			const inputs = dayForm.querySelectorAll("input");
+			inputs.forEach((i) => {
+				i.disabled = !isEditingDay;
+			});
+
+			const submitBtn = dayForm.querySelector("button[type='submit']");
+			submitBtn.disabled = false;
+			submitBtn.textContent = isEditingDay
+				? "Änderungen speichern"
+				: "Tag speichern";
+
+			setStatus(
+				dayStatusEl,
+				isEditingDay
+					? "Bearbeitungsmodus aktiv."
+					: "Bearbeitungsmodus beendet.",
+				isEditingDay ? "loading" : "",
+			);
+		});
+
+		activitiesListEl.addEventListener("click", async (e) => {
+			const delBtn = e.target.closest("[data-delete-activity]");
+			const editBtn = e.target.closest("[data-edit-activity]");
+
+			// Löschen
+			if (delBtn) {
+				const activityId = Number(delBtn.getAttribute("data-delete-activity"));
+				if (!activityId) return;
+
+				if (!confirm("Aktivität wirklich löschen?")) return;
+
+				setStatus(actStatusEl, "Lösche Aktivität…", "loading");
+
+				try {
+					const res = await fetch(
+						`http://localhost:8000/api/v1/activities/${activityId}/`,
+						{
+							method: "DELETE",
+						},
+					);
+
+					if (!res.ok) {
+						const data = await res.json().catch(() => ({}));
+						setStatus(
+							actStatusEl,
+							data?.detail || "Fehler beim Löschen.",
+							"error",
+						);
+						return;
+					}
+
+					activities = activities.filter((a) => a.id !== activityId);
+					renderActivities(activitiesListEl, activities);
+					setStatus(actStatusEl, "Aktivität gelöscht.", "success");
+				} catch (err) {
+					console.error(err);
+					setStatus(
+						actStatusEl,
+						"Netzwerkfehler – bitte erneut versuchen.",
+						"error",
+					);
+				}
+				return;
+			}
+
+			// Bearbeiten
+			if (editBtn) {
+				const activityId = Number(editBtn.getAttribute("data-edit-activity"));
+				const act = activities.find((x) => x.id === activityId);
+				if (!act) return;
+
+				editingActivityId = activityId;
+				activityForm.style.display = "block";
+
+				activityForm.querySelector("[name='title']").value = act.title || "";
+				activityForm.querySelector("[name='start_time']").value = fmtTime(
+					act.start_time,
+				);
+				activityForm.querySelector("[name='end_time']").value = fmtTime(
+					act.end_time,
+				);
+
+				setStatus(
+					actStatusEl,
+					"Bearbeitungsmodus: Änderungen speichern.",
+					"loading",
+				);
+			}
+		});
+
+		addActivityBtn.addEventListener("click", () => {
+			if (!savedDayId) {
+				setStatus(dayStatusEl, "Bitte zuerst den Tag speichern.", "error");
+				return;
+			}
+			activityForm.style.display =
+				activityForm.style.display === "none" ? "block" : "none";
+		});
+
+		dayForm.addEventListener("submit", async (e) => {
+			e.preventDefault();
+			if (!ensureJourneySaved()) return;
+
+			const fd = new FormData(dayForm);
+			const payloadCreate = {
+				journey_id: journeyId,
+				title: (fd.get("title") || "").toString(),
+				date: (fd.get("date") || "").toString(),
+			};
+
+			const payloadUpdate = {
+				title: (fd.get("title") || "").toString(),
+				date: (fd.get("date") || "").toString(),
+			};
+
+			const isUpdate = Boolean(savedDayId);
+			const url = isUpdate
+				? `http://localhost:8000/api/v1/days/${savedDayId}/`
+				: `http://localhost:8000/api/v1/days/`;
+
+			const method = isUpdate ? "PUT" : "POST";
+			const payload = isUpdate ? payloadUpdate : payloadCreate;
+
+			setStatus(
+				dayStatusEl,
+				isUpdate ? "Aktualisiere Tag…" : "Speichere Tag…",
+				"loading",
+			);
+
+			try {
+				const res = await fetch(url, {
+					method,
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload),
+				});
+
+				const data = await res.json().catch(() => ({}));
+
+				if (!res.ok) {
+					setStatus(
+						dayStatusEl,
+						data?.detail ||
+							(isUpdate
+								? "Fehler beim Aktualisieren."
+								: "Fehler beim Speichern."),
+						"error",
+					);
+					return;
+				}
+
+				// Bei Create: ID merken
+				if (!savedDayId) savedDayId = data.id;
+
+				// Nach Save: wieder sperren
+				dayForm.querySelectorAll("input").forEach((i) => {
+					i.disabled = true;
+				});
+
+				const submitBtn = dayForm.querySelector("button[type='submit']");
+				submitBtn.disabled = true;
+				submitBtn.textContent = "Tag speichern";
+
+				isEditingDay = false;
+
+				// Optional: Titelanzeige hübsch aktualisieren
+				if (dayTitleEl) dayTitleEl.textContent = `Tag ${localId}`;
+
+				setStatus(
+					dayStatusEl,
+					isUpdate ? "Tag aktualisiert!" : "Tag gespeichert!",
+					"success",
+				);
+
+				// Activity-Form bleibt wie bei dir: erst nach Save sinnvoll
+				activityForm.style.display = "none";
+			} catch (err) {
+				console.error(err);
+				setStatus(
+					dayStatusEl,
+					"Netzwerkfehler – bitte erneut versuchen.",
+					"error",
+				);
+			}
+		});
+
+		activityForm.addEventListener("submit", async (e) => {
+			e.preventDefault();
+			if (!savedDayId) return;
+
+			const fd = new FormData(activityForm);
+
+			const payloadCreate = {
+				day_id: savedDayId,
+				title: (fd.get("title") || "").toString(),
+				start_time: (fd.get("start_time") || "").toString() || null,
+				end_time: (fd.get("end_time") || "").toString() || null,
+			};
+
+			const payloadUpdate = {
+				title: (fd.get("title") || "").toString(),
+				start_time: (fd.get("start_time") || "").toString() || null,
+				end_time: (fd.get("end_time") || "").toString() || null,
+			};
+
+			const isEdit = Boolean(editingActivityId);
+			const url = isEdit
+				? `http://localhost:8000/api/v1/activities/${editingActivityId}/`
+				: `http://localhost:8000/api/v1/activities/`;
+
+			const method = isEdit ? "PUT" : "POST";
+			const payload = isEdit ? payloadUpdate : payloadCreate;
+
+			setStatus(
+				actStatusEl,
+				isEdit ? "Aktualisiere Aktivität…" : "Speichere Aktivität…",
+				"loading",
+			);
+
+			try {
+				const res = await fetch(url, {
+					method,
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload),
+				});
+
+				const data = await res.json().catch(() => ({}));
+
+				if (!res.ok) {
+					setStatus(
+						actStatusEl,
+						data?.detail ||
+							(isEdit
+								? "Fehler beim Aktualisieren."
+								: "Fehler beim Speichern."),
+						"error",
+					);
+					return;
+				}
+
+				if (isEdit) {
+					activities = activities.map((a) =>
+						a.id === editingActivityId ? data : a,
+					);
+					editingActivityId = null;
+					setStatus(actStatusEl, "Aktivität aktualisiert!", "success");
+				} else {
+					activities.push(data);
+					setStatus(actStatusEl, "Aktivität gespeichert!", "success");
+				}
+
+				renderActivities(activitiesListEl, activities);
+				activityForm.reset();
+				activityForm.style.display = "none";
+			} catch (err) {
+				console.error(err);
+				setStatus(
+					actStatusEl,
+					"Netzwerkfehler – bitte erneut versuchen.",
+					"error",
+				);
+			}
+		});
+
+		renderActivities(activitiesListEl, activities);
+	}
+
+	// Journey erstellen
+	form.addEventListener("submit", async (e) => {
+		e.preventDefault();
+
+		setStatus(journeyStatus, "Speichere Reise…", "loading");
+
+		const fd = new FormData(form);
+		const payload = {
+			title: (fd.get("title") || "").toString(),
+			price: (fd.get("price") || "").toString() || null,
+			start_date: (fd.get("start_date") || "").toString() || null,
+			end_date: (fd.get("end_date") || "").toString() || null,
+			description: (fd.get("description") || "").toString() || null,
+		};
+
+		try {
+			const res = await fetch("http://localhost:8000/api/v1/journey", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			});
+
+			const data = await res.json().catch(() => ({}));
+
+			if (!res.ok) {
+				setStatus(
+					journeyStatus,
+					data?.detail || "Fehler beim Anlegen der Reise.",
+					"error",
+				);
+				return;
+			}
+
+			journeyId = data.id;
+
+			setStatus(
+				journeyStatus,
+				"Reise gespeichert! Jetzt Tage hinzufügen.",
+				"success",
+			);
+
+			form
+				.querySelectorAll("input, textarea, button[type='submit']")
+				.forEach((el) => {
+					el.disabled = true;
+				});
+
+			// Tage-Sektion anzeigen
+			daysCard.style.display = "block";
+			setStatus(daysStatus, "", "");
+		} catch (err) {
+			console.error(err);
+			setStatus(
+				journeyStatus,
+				"Netzwerkfehler – bitte erneut versuchen.",
+				"error",
+			);
+		}
+	});
+
+	// UI für Tag hinzufügen
+	addDayBtn.addEventListener("click", () => {
+		if (!ensureJourneySaved()) return;
+
+		dayCounter += 1;
+		const localId = String(dayCounter);
+
+		const wrapper = document.createElement("div");
+		wrapper.innerHTML = dayTemplate({ localId, index: dayCounter });
+		const dayCardEl = wrapper.firstElementChild;
+
+		daysList.appendChild(dayCardEl);
+		wireDayCard(dayCardEl);
+
+		setStatus(daysStatus, "", "");
+	});
 }

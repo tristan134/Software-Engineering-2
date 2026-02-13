@@ -6,15 +6,15 @@ from app.db.session import get_db
 from app.db import models
 from app.db.schemas import ShowJourneySummarize, Journey
 
-router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+router = APIRouter(prefix="/journeys", tags=["journeys"])
 
 
-@router.get("/journeys", response_model=List[ShowJourneySummarize])
+@router.get("", response_model=List[ShowJourneySummarize])
 def get_all_journeys(db: Session = Depends(get_db)):
     return db.query(models.Journey).all()
 
 
-@router.delete("/journeys/{journey_id}", status_code=204)
+@router.delete("/{journey_id}", status_code=204)
 def delete_journey(journey_id: int, db: Session = Depends(get_db)):
     journey = db.query(models.Journey).filter(models.Journey.id == journey_id).first()
 
@@ -26,7 +26,7 @@ def delete_journey(journey_id: int, db: Session = Depends(get_db)):
     return
 
 
-@router.get("/journeys/{journey_id}", response_model=Journey)
+@router.get("/{journey_id}", response_model=Journey)
 def get_full_journey(journey_id: int, db: Session = Depends(get_db)):
     journey = db.query(models.Journey).filter(models.Journey.id == journey_id).first()
 

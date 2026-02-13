@@ -1,28 +1,18 @@
-name: Code Formatting Check
+name: Biome Check
 
 on:
   pull_request:
     branches: ["main"]
 
 jobs:
-  frontend-prettier:
-    name: Frontend – Prettier
+  biome:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Install Node
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
         with:
-          node-version: "18"
+          node-version: 22
 
-      - name: Install Dependencies
-        run: |
-          cd frontend
-          npm install
+      - run: npm ci --prefix frontend
 
-      - name: Run Prettier
-        run: |
-          cd frontend
-          npx prettier --write .
-
+      - run: npx --prefix frontend biome check frontend/
