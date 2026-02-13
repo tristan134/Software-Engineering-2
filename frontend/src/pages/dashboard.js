@@ -13,7 +13,7 @@ async function loadJourneys() {
 	const container = document.getElementById("journeys");
 
 	try {
-		const res = await fetch("http://localhost:8000/api/v1/journeys");
+		const res = await fetch("http://localhost:8000/api/v1/journey");
 		const journeys = await res.json();
 
 		// Wenn KEINE Reisen existieren → Hinweistext anzeigen
@@ -78,7 +78,7 @@ async function deleteJourney(id) {
 	}
 
 	try {
-		await fetch(`http://localhost:8000/api/v1/journeys/${id}`, {
+		await fetch(`http://localhost:8000/api/v1/journey/${id}`, {
 			method: "DELETE",
 		});
 

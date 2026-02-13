@@ -575,7 +575,7 @@ export function renderNewJourney({ mount }) {
 		};
 
 		try {
-			const res = await fetch("http://localhost:8000/api/v1/journey", {
+			const res = await fetch("http://localhost:8000/api/v1/journey/create", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(payload),

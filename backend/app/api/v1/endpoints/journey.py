@@ -3,12 +3,31 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.db import models
-from app.db.schemas import JourneyCreate, Journey
+from app.db.schemas import JourneyCreate, ShowJourneySummarize, Journey
+from typing import List
+
 
 router = APIRouter(prefix="/journey", tags=["journey"])
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.get("", response_model=List[ShowJourneySummarize])
+def get_all_journeys(db: Session = Depends(get_db)):
+    return db.query(models.Journey).all()
+
+
+@router.get("/{journey_id}", response_model=Journey)
+def get_journey(journey_id: int, db: Session = Depends(get_db)):
+    journey = db.query(models.Journey).filter(models.Journey.id == journey_id).first()
+
+    if journey is None:
+        raise HTTPException(status_code=404, detail="Reise nicht gefunden")
+
+    return journey
+
+
+@router.post(
+    "/create", status_code=status.HTTP_201_CREATED, response_model=schemas.Journey
+)
 def create_journey(payload: JourneyCreate, db: Session = Depends(get_db)):
     if not payload.title.strip():
         raise HTTPException(status_code=400, detail="title darf nicht leer sein")
@@ -22,7 +41,7 @@ def create_journey(payload: JourneyCreate, db: Session = Depends(get_db)):
             status_code=400, detail="end_date darf nicht vor start_date liegen"
         )
 
-    journey = Journey(
+    journey = models.Journey(
         title=payload.title.strip(),
         price=payload.price,
         start_date=payload.start_date,
@@ -33,15 +52,6 @@ def create_journey(payload: JourneyCreate, db: Session = Depends(get_db)):
     db.add(journey)
     db.commit()
     db.refresh(journey)
-    return journey
-
-
-@router.get("/{journey_id}", response_model=Journey)
-def get_journey(journey_id: int, db: Session = Depends(get_db)):
-    journey = db.query(models.Journey).filter(models.Journey.id == journey_id).first()
-
-    if journey is None:
-        raise HTTPException(status_code=404, detail="Reise nicht gefunden")
 
     return journey
 
@@ -86,3 +96,15 @@ def update_journey(
     db.commit()
     db.refresh(journey)
     return journey
+
+
+@router.delete("/{journey_id}", status_code=204)
+def delete_journey(journey_id: int, db: Session = Depends(get_db)):
+    journey = db.query(models.Journey).filter(models.Journey.id == journey_id).first()
+
+    if journey is None:
+        raise HTTPException(status_code=404, detail="Reise nicht gefunden")
+
+    db.delete(journey)
+    db.commit()
+    return
