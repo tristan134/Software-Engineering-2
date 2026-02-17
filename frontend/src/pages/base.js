@@ -7,6 +7,7 @@ export function renderBaseLayout({ mount }) {
         </div>
 
         <nav class="nav" aria-label="Hauptnavigation">
+          <a href="#/" data-link><i class="fa-solid fa-house"></i></a>
           <a href="#/newjourney" data-link>Reise hinzufügen</a>
         </nav>
       </header>

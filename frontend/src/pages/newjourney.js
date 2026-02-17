@@ -1,4 +1,6 @@
 export function renderNewJourney({ mount }) {
+	const API = "http://localhost:8000/api/v1";
+
 	mount.innerHTML = `
     <section class="landing">
       <h1>Reise anlegen</h1>
@@ -6,7 +8,13 @@ export function renderNewJourney({ mount }) {
 
       <!-- Journey Details -->
       <form id="newJourneyForm" class="card mb-lg">
-        <div class="card-header">Reisedetails</div>
+        <div class="actions" style="align-items: center;">
+          <div class="card-header" style="margin:0;">Reisedetails</div>
+          <div class="actions-right" style="gap: 8px;">
+            <button class="btn btn-secondary btn-sm" id="editJourneyBtn" type="button" style="display:none;">Bearbeiten</button>
+            <button class="btn btn-secondary btn-sm" id="deleteJourneyBtn" type="button" style="display:none;">Löschen</button>
+          </div>
+        </div>
 
         <div class="form-group">
           <label class="label" for="title">Titel</label>
@@ -15,7 +23,7 @@ export function renderNewJourney({ mount }) {
 
         <div class="form-group">
           <label class="label" for="price">Gesamtpreis (optional)</label>
-			<input id="price" name="price" type="number" min="0" max="99999.99" step="0.01" class="input" placeholder="z.B 1000 oder 1000.50"/>
+			<input id="price" name="price" type="number" min="0" max="99999.99" step="0.01" class="input" placeholder="z.B 1000€ oder 1000.50€"/>
         </div>
 
         <div class="flex gap-md mb-md" style="flex-wrap: wrap;">
@@ -37,7 +45,7 @@ export function renderNewJourney({ mount }) {
 
         <div class="actions">
           <div id="journeyStatus" class="form-status"></div>
-          <button type="submit" class="btn btn-primary">Reise speichern</button>
+          <button type="submit" class="btn btn-primary" id="saveJourneyBtn">Reise speichern</button>
         </div>
       </form>
 
@@ -51,7 +59,6 @@ export function renderNewJourney({ mount }) {
           <button class="btn btn-accent" id="addDayBtn" type="button">+ Tag</button>
         </div>
 
-
         <div id="daysStatus" class="form-status mb-md"></div>
         <div id="daysList" class="flex flex-column" style="gap: 12px;"></div>
       </div>
@@ -60,6 +67,9 @@ export function renderNewJourney({ mount }) {
 
 	const form = mount.querySelector("#newJourneyForm");
 	const journeyStatus = mount.querySelector("#journeyStatus");
+	const saveJourneyBtn = mount.querySelector("#saveJourneyBtn");
+	const editJourneyBtn = mount.querySelector("#editJourneyBtn");
+	const deleteJourneyBtn = mount.querySelector("#deleteJourneyBtn");
 
 	const daysCard = mount.querySelector("#daysCard");
 	const addDayBtn = mount.querySelector("#addDayBtn");
@@ -68,6 +78,7 @@ export function renderNewJourney({ mount }) {
 
 	let journeyId = null;
 	let dayCounter = 0;
+	let isEditingJourney = true; // vor erstem Speichern ist das Formular editierbar
 
 	function setStatus(el, text, type) {
 		el.textContent = text || "";
@@ -87,6 +98,13 @@ export function renderNewJourney({ mount }) {
 		return t ? String(t).slice(0, 5) : "";
 	}
 
+	function setJourneyFormEnabled(enabled) {
+		form.querySelectorAll("input, textarea").forEach((el) => {
+			el.disabled = !enabled;
+		});
+		saveJourneyBtn.disabled = !enabled;
+	}
+
 	function ensureJourneySaved() {
 		if (!journeyId) {
 			setStatus(daysStatus, "Bitte zuerst die Reise speichern.", "error");
@@ -94,6 +112,227 @@ export function renderNewJourney({ mount }) {
 		}
 		return true;
 	}
+
+	function resetToInitialState() {
+		journeyId = null;
+		dayCounter = 0;
+		isEditingJourney = true;
+
+		form.reset();
+		setJourneyFormEnabled(true);
+		setStatus(journeyStatus, "", "");
+		setStatus(daysStatus, "", "");
+
+		// Buttons/Section zurücksetzen
+		editJourneyBtn.style.display = "none";
+		deleteJourneyBtn.style.display = "none";
+		daysCard.style.display = "none";
+		daysList.innerHTML = "";
+
+		saveJourneyBtn.textContent = "Reise speichern";
+	}
+
+	// Journey bearbeiten/entsperren (nachdem die Reise angelegt wurde)
+	editJourneyBtn?.addEventListener("click", () => {
+		if (!journeyId) {
+			setStatus(journeyStatus, "Bitte zuerst die Reise speichern.", "error");
+			return;
+		}
+
+		isEditingJourney = !isEditingJourney;
+		setJourneyFormEnabled(isEditingJourney);
+		saveJourneyBtn.textContent = isEditingJourney
+			? "Änderungen speichern"
+			: "Reise speichern";
+		editJourneyBtn.textContent = isEditingJourney
+			? "Bearbeiten beenden"
+			: "Bearbeiten";
+
+		setStatus(
+			journeyStatus,
+			isEditingJourney
+				? "Bearbeitungsmodus aktiv. Änderungen speichern um zu übernehmen."
+				: "Bearbeitungsmodus beendet.",
+			isEditingJourney ? "loading" : "",
+		);
+	});
+
+	// Journey löschen (falls man sich vertippt und neu starten will)
+	deleteJourneyBtn?.addEventListener("click", async () => {
+		if (!journeyId) {
+			resetToInitialState();
+			return;
+		}
+
+		if (
+			!confirm(
+				"Reise wirklich löschen? Alle bisher angelegten Tage/Aktivitäten gehen verloren.",
+			)
+		) {
+			return;
+		}
+
+		setStatus(journeyStatus, "Lösche Reise…", "loading");
+
+		try {
+			const res = await fetch(`${API}/journey/${journeyId}`, {
+				method: "DELETE",
+			});
+
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}));
+				setStatus(
+					journeyStatus,
+					data?.detail || "Fehler beim Löschen der Reise.",
+					"error",
+				);
+				return;
+			}
+
+			resetToInitialState();
+			setStatus(journeyStatus, "Reise gelöscht.", "success");
+		} catch (err) {
+			console.error(err);
+			setStatus(
+				journeyStatus,
+				"Netzwerkfehler – bitte erneut versuchen.",
+				"error",
+			);
+		}
+	});
+
+	// Journey erstellen / aktualisieren
+	form.addEventListener("submit", async (e) => {
+		e.preventDefault();
+
+		const fd = new FormData(form);
+		const payload = {
+			title: (fd.get("title") || "").toString(),
+			price: (fd.get("price") || "").toString() || null,
+			start_date: (fd.get("start_date") || "").toString() || null,
+			end_date: (fd.get("end_date") || "").toString() || null,
+			description: (fd.get("description") || "").toString() || null,
+		};
+
+		// 1) Noch nicht gespeichert => Create
+		if (!journeyId) {
+			setStatus(journeyStatus, "Speichere Reise…", "loading");
+
+			try {
+				const res = await fetch(`${API}/journey/create`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload),
+				});
+
+				const data = await res.json().catch(() => ({}));
+
+				if (!res.ok) {
+					setStatus(
+						journeyStatus,
+						data?.detail || "Fehler beim Anlegen der Reise.",
+						"error",
+					);
+					return;
+				}
+
+				journeyId = data.id;
+				isEditingJourney = false;
+
+				// Formular sperren und Buttons einblenden
+				setJourneyFormEnabled(false);
+				editJourneyBtn.style.display = "inline-flex";
+				deleteJourneyBtn.style.display = "inline-flex";
+				saveJourneyBtn.textContent = "Reise speichern";
+				editJourneyBtn.textContent = "Bearbeiten";
+
+				setStatus(
+					journeyStatus,
+					"Reise gespeichert! Du kannst sie über ‚Bearbeiten‘ korrigieren oder löschen.",
+					"success",
+				);
+
+				// Tage-Sektion anzeigen
+				daysCard.style.display = "block";
+				setStatus(daysStatus, "", "");
+			} catch (err) {
+				console.error(err);
+				setStatus(
+					journeyStatus,
+					"Netzwerkfehler – bitte erneut versuchen.",
+					"error",
+				);
+			}
+			return;
+		}
+
+		// 2) Bereits gespeichert => Update (nur wenn Bearbeiten aktiv)
+		if (!isEditingJourney) {
+			setStatus(
+				journeyStatus,
+				"Klicke zuerst auf ‚Bearbeiten‘, um Änderungen vorzunehmen.",
+				"error",
+			);
+			return;
+		}
+
+		setStatus(journeyStatus, "Speichere Änderungen…", "loading");
+
+		try {
+			const res = await fetch(`${API}/journey/${journeyId}`, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					...payload,
+					// Backend akzeptiert "" als Beschreibung; wir schicken lieber null -> ""
+					description: payload.description ?? "",
+				}),
+			});
+
+			const data = await res.json().catch(() => ({}));
+
+			if (!res.ok) {
+				setStatus(
+					journeyStatus,
+					data?.detail || "Fehler beim Speichern der Änderungen.",
+					"error",
+				);
+				return;
+			}
+
+			// Nach Save wieder sperren
+			isEditingJourney = false;
+			setJourneyFormEnabled(false);
+			saveJourneyBtn.textContent = "Reise speichern";
+			editJourneyBtn.textContent = "Bearbeiten";
+
+			setStatus(journeyStatus, "Änderungen gespeichert!", "success");
+		} catch (err) {
+			console.error(err);
+			setStatus(
+				journeyStatus,
+				"Netzwerkfehler – bitte erneut versuchen.",
+				"error",
+			);
+		}
+	});
+
+	// UI für Tag hinzufügen
+	addDayBtn.addEventListener("click", () => {
+		if (!ensureJourneySaved()) return;
+
+		dayCounter += 1;
+		const localId = String(dayCounter);
+
+		const wrapper = document.createElement("div");
+		wrapper.innerHTML = dayTemplate({ localId, index: dayCounter });
+		const dayCardEl = wrapper.firstElementChild;
+
+		daysList.appendChild(dayCardEl);
+		wireDayCard(dayCardEl);
+
+		setStatus(daysStatus, "", "");
+	});
 
 	function dayTemplate({ localId, index }) {
 		return `
