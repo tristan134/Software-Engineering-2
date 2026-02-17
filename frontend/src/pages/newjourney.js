@@ -284,7 +284,6 @@ export function renderNewJourney({ mount }) {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					...payload,
-					// Backend akzeptiert "" als Beschreibung; wir schicken lieber null -> ""
 					description: payload.description ?? "",
 				}),
 			});
@@ -797,81 +796,4 @@ export function renderNewJourney({ mount }) {
 
 		renderActivities(activitiesListEl, activities);
 	}
-
-	// Journey erstellen
-	form.addEventListener("submit", async (e) => {
-		e.preventDefault();
-
-		setStatus(journeyStatus, "Speichere Reise…", "loading");
-
-		const fd = new FormData(form);
-		const payload = {
-			title: (fd.get("title") || "").toString(),
-			price: (fd.get("price") || "").toString() || null,
-			start_date: (fd.get("start_date") || "").toString() || null,
-			end_date: (fd.get("end_date") || "").toString() || null,
-			description: (fd.get("description") || "").toString() || null,
-		};
-
-		try {
-			const res = await fetch("http://localhost:8000/api/v1/journey/create", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(payload),
-			});
-
-			const data = await res.json().catch(() => ({}));
-
-			if (!res.ok) {
-				setStatus(
-					journeyStatus,
-					data?.detail || "Fehler beim Anlegen der Reise.",
-					"error",
-				);
-				return;
-			}
-
-			journeyId = data.id;
-
-			setStatus(
-				journeyStatus,
-				"Reise gespeichert! Jetzt Tage hinzufügen.",
-				"success",
-			);
-
-			form
-				.querySelectorAll("input, textarea, button[type='submit']")
-				.forEach((el) => {
-					el.disabled = true;
-				});
-
-			// Tage-Sektion anzeigen
-			daysCard.style.display = "block";
-			setStatus(daysStatus, "", "");
-		} catch (err) {
-			console.error(err);
-			setStatus(
-				journeyStatus,
-				"Netzwerkfehler – bitte erneut versuchen.",
-				"error",
-			);
-		}
-	});
-
-	// UI für Tag hinzufügen
-	addDayBtn.addEventListener("click", () => {
-		if (!ensureJourneySaved()) return;
-
-		dayCounter += 1;
-		const localId = String(dayCounter);
-
-		const wrapper = document.createElement("div");
-		wrapper.innerHTML = dayTemplate({ localId, index: dayCounter });
-		const dayCardEl = wrapper.firstElementChild;
-
-		daysList.appendChild(dayCardEl);
-		wireDayCard(dayCardEl);
-
-		setStatus(daysStatus, "", "");
-	});
 }

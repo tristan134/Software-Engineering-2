@@ -1,4 +1,5 @@
 from sqlalchemy import String, Text, Date, ForeignKey, Time, Numeric
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.session import Base
 import datetime
@@ -22,6 +23,9 @@ class Journey(Base):
 
 class Day(Base):
     __tablename__ = "days"
+    __table_args__ = (
+        UniqueConstraint("journey_id", "date", name="uq_days_journey_date"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(120), nullable=False)
