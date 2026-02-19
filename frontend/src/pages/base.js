@@ -3,11 +3,14 @@ export function renderBaseLayout({ mount }) {
     <div class="layout">
       <header class="topbar">
         <div class="brand" role="banner">
-          <a class="brand-link" href="#/">J<i class="fa-solid fa-location-dot"></i>urneo</a>
+            J<i class="fa-solid fa-location-dot"></i>urneo
         </div>
 
         <nav class="nav" aria-label="Hauptnavigation">
-          <a href="#/newjourney" data-link>Reise hinzufügen</a>
+          <div class="nav-group">
+            <a href="#/" data-link>Übersicht</a>
+            <a href="#/newjourney" data-link>Reise hinzufügen</a>
+          </div>
         </nav>
       </header>
 

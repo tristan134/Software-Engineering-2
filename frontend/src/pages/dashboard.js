@@ -4,6 +4,7 @@ export function renderDashboardPage({ mount }) {
 	mount.innerHTML = `
     <section class="landing">
       <h1>J<i class="fa-solid fa-location-dot"></i>urneo</h1>
+      <h2>Dein persönlicher Reiseplaner</h2>
       <div id="journeys"></div>
     </section>
   `;
@@ -18,7 +19,7 @@ async function loadJourneys() {
 		const res = await fetch("http://localhost:8000/api/v1/journey");
 		const journeys = await res.json();
 
-		// Wenn KEINE Reisen existieren → Hinweistext anzeigen
+		// Wenn keine Reise angelegt ist, soll ein Hinweistext angezeigt werden
 		if (!journeys || journeys.length === 0) {
 			container.innerHTML = `
         <p style="padding: 1rem; font-size: 1.1rem;">
@@ -29,7 +30,12 @@ async function loadJourneys() {
 			return;
 		}
 
-		// Wenn Reisen existieren → Karten rendern
+		// ----------------------------------------------------------
+		// SORTIERUNG NACH STARTDATUM
+		// ----------------------------------------------------------
+		journeys.sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+
+		// Karten rendern, wenn Reise existiert
 		container.innerHTML = journeys
 			.map(
 				(j) => `
@@ -41,16 +47,10 @@ async function loadJourneys() {
             <p><strong>Start:</strong> ${new Date(j.start_date).toLocaleDateString()}</p>
             <p><strong>Ende:</strong> ${new Date(j.end_date).toLocaleDateString()}</p>
             
-            <div>
-                <button class = "btn" onclick="deleteJourney(${
-									j.id
-								})">🗑️</button>
-                <button class = "btn" onclick="showFullJourney(${
-									j.id
-								})">👀</button>
-                <button class = "btn" onclick="editJourney(${
-									j.id
-								})">Bearbeiten</button>
+            <div class="journey-actions">
+                <button class="btn" onclick="deleteJourney(${j.id})">🗑️</button>
+                <button class="btn" onclick="showFullJourney(${j.id})">👀</button>
+                <button class="btn" onclick="editJourney(${j.id})">Bearbeiten</button>
             </div>
           </div>
         </div>
@@ -93,7 +93,6 @@ async function deleteJourney(id) {
 window.deleteJourney = deleteJourney;
 
 function editJourney(id) {
-	// Navigiert zur Edit-Seite
 	window.location.hash = `#/editjourney/${id}`;
 }
 window.editJourney = editJourney;
