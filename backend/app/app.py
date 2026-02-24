@@ -1,15 +1,17 @@
 from fastapi import FastAPI
-from app.db.session import Base, engine
-from app.api.routes import api_router
 from fastapi.middleware.cors import CORSMiddleware
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+from app.api.routes import api_router
+from app.db.session import Base, engine
+
 app = FastAPI(title="Journeo", version="1.0.0")
 app.include_router(api_router)
 
-# CORS enables that the frontend (running on a different origin/port) can access
-# the API without being blocked by the browser’s same‑origin policy.
+
+@app.on_event("startup")
+def _create_tables() -> None:
+    Base.metadata.create_all(bind=engine)
+
 
 origins = ["*"]
 app.add_middleware(
