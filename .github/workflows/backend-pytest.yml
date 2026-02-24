@@ -2,10 +2,7 @@ name: Backend Pytest
 
 on:
   pull_request:
-    paths:
-      - "backend/**"
-      - ".github/workflows/**"
-  workflow_dispatch:
+    branches: ["main"]
 
 permissions:
   contents: read
