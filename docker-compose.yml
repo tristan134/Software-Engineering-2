@@ -14,7 +14,7 @@ services:
       retries: 10
 
   backend:
-    build: ./backend
+    image: ghcr.io/tristan134/journeo-backend:${VERSION}
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -28,7 +28,7 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    image: ghcr.io/tristan134/journeo-frontend:${VERSION}
     ports:
       - "8080:80"
     depends_on:
