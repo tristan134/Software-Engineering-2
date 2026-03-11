@@ -71,6 +71,9 @@ export function renderEditJourney({ mount }) {
 	const daysList = mount.querySelector("#daysList");
 	const daysStatus = mount.querySelector("#daysStatus");
 
+	const startDateEl = form.querySelector("#start_date");
+	const endDateEl = form.querySelector("#end_date");
+
 	function setStatus(el, text, type) {
 		el.textContent = text || "";
 		el.className = `form-status ${type || ""}`;
@@ -89,11 +92,34 @@ export function renderEditJourney({ mount }) {
 		return t ? String(t).slice(0, 5) : "";
 	}
 
-	function dayTemplate({ localId, index }) {
+	function parseDateInputValueToUtcMidnight(value) {
+		// input[type=date] liefert YYYY-MM-DD ohne Zeitzone.
+		// Wir parsen explizit als UTC-Mitternacht, damit Offsets stabil bleiben.
+		if (!value || typeof value !== "string") return null;
+		const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+		if (!m) return null;
+		const year = Number(m[1]);
+		const month = Number(m[2]);
+		const day = Number(m[3]);
+		if (!year || !month || !day) return null;
+		return new Date(Date.UTC(year, month - 1, day));
+	}
+
+	function computeDayNumber({ journeyStart, dayDate }) {
+		const start = parseDateInputValueToUtcMidnight(journeyStart);
+		const d = parseDateInputValueToUtcMidnight(dayDate);
+		if (!start || !d) return null;
+
+		const diffMs = d.getTime() - start.getTime();
+		const diffDays = Math.round(diffMs / (24 * 60 * 60 * 1000));
+		return diffDays + 1; // Startdatum = Tag 1
+	}
+
+	function dayTemplate({ localId }) {
 		return `
       <div class="card" data-day-card="${localId}" style="padding: 14px;">
         <div class="actions mb-md">
-          <div class="card-title">Tag ${index}</div>
+          <div class="card-title" data-day-title="${localId}">Tag (noch nicht gespeichert)</div>
           <div class="actions-right">
             <button class="btn btn-secondary btn-sm" type="button" data-edit-day="${localId}">Bearbeiten</button>
             <button class="btn btn-secondary btn-sm" type="button" data-delete-day="${localId}">Löschen</button>
@@ -224,12 +250,45 @@ export function renderEditJourney({ mount }) {
 			`[data-delete-day="${localId}"]`,
 		);
 
+		const dayTitleEl = dayCardEl.querySelector(`[data-day-title="${localId}"]`);
+
 		let savedDayId = initialDay?.id ?? null;
 		let activities = Array.isArray(initialActivities)
 			? initialActivities.slice()
 			: [];
 		let editingActivityId = null;
 		let isEditingDay = false;
+
+		function updateDayTitleFromDate() {
+			if (!dayTitleEl) return;
+			const dayDate = dayForm.querySelector("[name='date']")?.value;
+			const start = startDateEl?.value;
+			const end = endDateEl?.value;
+
+			const dayNumber = computeDayNumber({ journeyStart: start, dayDate });
+			if (dayNumber == null) {
+				dayTitleEl.textContent = "Tag";
+				return;
+			}
+
+			dayTitleEl.textContent = `Tag ${dayNumber}`;
+
+			// Optional: Range-Hinweis, falls Datum außerhalb der Reise liegt.
+			const endDate = parseDateInputValueToUtcMidnight(end);
+			const dayDateUtc = parseDateInputValueToUtcMidnight(dayDate);
+			const startUtc = parseDateInputValueToUtcMidnight(start);
+			if (
+				startUtc &&
+				dayDateUtc &&
+				(dayDateUtc < startUtc || (endDate && dayDateUtc > endDate))
+			) {
+				setStatus(
+					dayStatusEl,
+					`Hinweis: Das Datum liegt außerhalb des Reisezeitraums (${start || "?"}–${end || "?"}).`,
+					"error",
+				);
+			}
+		}
 
 		// Prefill day
 		if (initialDay) {
@@ -240,6 +299,8 @@ export function renderEditJourney({ mount }) {
 				i.disabled = true;
 			});
 			dayForm.querySelector("button[type='submit']").disabled = true;
+			// Header anhand des Datums sofort korrekt setzen
+			updateDayTitleFromDate();
 		}
 
 		deleteDayBtn.addEventListener("click", async () => {
@@ -431,6 +492,9 @@ export function renderEditJourney({ mount }) {
 				submitBtn.textContent = "Tag speichern";
 				isEditingDay = false;
 
+				// Tag-Nummer jetzt aus Datum ableiten (nach Save/Update)
+				updateDayTitleFromDate();
+
 				setStatus(dayStatusEl, "Tag gespeichert/aktualisiert!", "success");
 				activityForm.style.display = "none";
 			} catch (err) {
@@ -562,11 +626,10 @@ export function renderEditJourney({ mount }) {
 
 	// + Tag
 	addDayBtn.addEventListener("click", () => {
-		const index = daysList.children.length + 1;
 		const localId = `new-${Date.now()}`;
 
 		const wrapper = document.createElement("div");
-		wrapper.innerHTML = dayTemplate({ localId, index });
+		wrapper.innerHTML = dayTemplate({ localId });
 		const dayCardEl = wrapper.firstElementChild;
 
 		daysList.appendChild(dayCardEl);
@@ -623,7 +686,7 @@ export function renderEditJourney({ mount }) {
 				const localId = `day-${d.id}`;
 
 				const wrapper = document.createElement("div");
-				wrapper.innerHTML = dayTemplate({ localId, index: idx });
+				wrapper.innerHTML = dayTemplate({ localId });
 				const dayCardEl = wrapper.firstElementChild;
 
 				daysList.appendChild(dayCardEl);
