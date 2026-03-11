@@ -55,3 +55,4 @@ SE2/
 GitHub Actions:
 _ Ruff Python Linter (Code Formatting)
 - Static Analysis
+
