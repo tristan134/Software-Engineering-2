@@ -66,6 +66,9 @@ export function renderNewJourney({ mount }) {
 	const daysList = mount.querySelector("#daysList");
 	const daysStatus = mount.querySelector("#daysStatus");
 
+	const startDateEl = form.querySelector("#start_date");
+	const endDateEl = form.querySelector("#end_date");
+
 	let journeyId = null;
 	let dayCounter = 0;
 
@@ -87,6 +90,29 @@ export function renderNewJourney({ mount }) {
 		return t ? String(t).slice(0, 5) : "";
 	}
 
+	function parseDateInputValueToUtcMidnight(value) {
+		// input[type=date] liefert YYYY-MM-DD ohne Zeitzone.
+		// Wir parsen explizit als UTC-Mitternacht, damit Offsets stabil bleiben.
+		if (!value || typeof value !== "string") return null;
+		const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+		if (!m) return null;
+		const year = Number(m[1]);
+		const month = Number(m[2]);
+		const day = Number(m[3]);
+		if (!year || !month || !day) return null;
+		return new Date(Date.UTC(year, month - 1, day));
+	}
+
+	function computeDayNumber({ journeyStart, dayDate }) {
+		const start = parseDateInputValueToUtcMidnight(journeyStart);
+		const d = parseDateInputValueToUtcMidnight(dayDate);
+		if (!start || !d) return null;
+
+		const diffMs = d.getTime() - start.getTime();
+		const diffDays = Math.round(diffMs / (24 * 60 * 60 * 1000));
+		return diffDays + 1; // Startdatum = Tag 1
+	}
+
 	function ensureJourneySaved() {
 		if (!journeyId) {
 			setStatus(daysStatus, "Bitte zuerst die Reise speichern.", "error");
@@ -95,11 +121,11 @@ export function renderNewJourney({ mount }) {
 		return true;
 	}
 
-	function dayTemplate({ localId, index }) {
+	function dayTemplate({ localId }) {
 		return `
       <div class="card" data-day-card="${localId}" style="padding: 14px;">
         <div class="actions mb-md">
-          <div class="card-title">Tag ${index}</div>
+          <div class="card-title" data-day-title="${localId}">Tag (noch nicht gespeichert)</div>
           <div class="actions-right">
           <button class="btn btn-secondary btn-sm" type="button" data-edit-day="${localId}">Bearbeiten</button>
           <button class="btn btn-secondary btn-sm" type="button" data-delete-day="${localId}">Löschen</button>
@@ -237,6 +263,37 @@ export function renderNewJourney({ mount }) {
 		let activities = [];
 		let editingActivityId = null;
 		let isEditingDay = false;
+
+		function updateDayTitleFromDate() {
+			if (!dayTitleEl) return;
+			const dayDate = dayForm.querySelector("[name='date']")?.value;
+			const start = startDateEl?.value;
+			const end = endDateEl?.value;
+
+			const dayNumber = computeDayNumber({ journeyStart: start, dayDate });
+			if (dayNumber == null) {
+				dayTitleEl.textContent = "Tag";
+				return;
+			}
+
+			dayTitleEl.textContent = `Tag ${dayNumber}`;
+
+			// Optional: Range-Hinweis, falls Datum außerhalb der Reise liegt.
+			const endDate = parseDateInputValueToUtcMidnight(end);
+			const dayDateUtc = parseDateInputValueToUtcMidnight(dayDate);
+			const startUtc = parseDateInputValueToUtcMidnight(start);
+			if (
+				startUtc &&
+				dayDateUtc &&
+				(dayDateUtc < startUtc || (endDate && dayDateUtc > endDate))
+			) {
+				setStatus(
+					dayStatusEl,
+					`Hinweis: Das Datum liegt außerhalb des Reisezeitraums (${start || "?"}–${end || "?"}).`,
+					"error",
+				);
+			}
+		}
 
 		deleteDayBtn.addEventListener("click", async () => {
 			// Wenn Tag noch nicht gespeichert: einfach Card entfernen
@@ -457,8 +514,8 @@ export function renderNewJourney({ mount }) {
 
 				isEditingDay = false;
 
-				// Optional: Titelanzeige hübsch aktualisieren
-				if (dayTitleEl) dayTitleEl.textContent = `Tag ${localId}`;
+				// Tag-Nummer jetzt aus Datum ableiten (Datum ist erst nach Save relevant)
+				updateDayTitleFromDate();
 
 				setStatus(
 					dayStatusEl,
@@ -627,7 +684,7 @@ export function renderNewJourney({ mount }) {
 		const localId = String(dayCounter);
 
 		const wrapper = document.createElement("div");
-		wrapper.innerHTML = dayTemplate({ localId, index: dayCounter });
+		wrapper.innerHTML = dayTemplate({ localId });
 		const dayCardEl = wrapper.firstElementChild;
 
 		daysList.appendChild(dayCardEl);
