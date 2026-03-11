@@ -74,6 +74,8 @@ export function renderEditJourney({ mount }) {
 	const startDateEl = form.querySelector("#start_date");
 	const endDateEl = form.querySelector("#end_date");
 
+	let initialJourneyStartDate = null;
+
 	function setStatus(el, text, type) {
 		el.textContent = text || "";
 		el.className = `form-status ${type || ""}`;
@@ -619,21 +621,38 @@ export function renderEditJourney({ mount }) {
 		e.preventDefault();
 		setStatus(journeyStatus, "Speichere Änderungen…", "loading");
 
+		// Fallback: falls initialJourneyStartDate aus irgendeinem Grund nicht gesetzt wurde,
+		// nehmen wir den aktuellen (bisherigen) Wert aus dem Input als "initial".
+		if (!initialJourneyStartDate) {
+			initialJourneyStartDate = startDateEl?.value || null;
+		}
+
 		const fd = new FormData(form);
+		const nextStartDate = (fd.get("start_date") || "").toString() || null;
+
+		const shiftDays = Boolean(
+			nextStartDate &&
+				initialJourneyStartDate &&
+				nextStartDate !== initialJourneyStartDate,
+		);
+
 		const payload = {
 			title: (fd.get("title") || "").toString(),
 			price: (fd.get("price") || "").toString() || null,
-			start_date: (fd.get("start_date") || "").toString() || null,
+			start_date: nextStartDate,
 			end_date: (fd.get("end_date") || "").toString() || null,
 			description: (fd.get("description") || "").toString() || "",
 		};
 
 		try {
-			const res = await fetch(`${API}/journey/${journeyId}`, {
-				method: "PUT",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(payload),
-			});
+			const res = await fetch(
+				`${API}/journey/${journeyId}${shiftDays ? "?shift_days=true" : ""}`,
+				{
+					method: "PUT",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload),
+				},
+			);
 
 			const data = await res.json().catch(() => ({}));
 			if (!res.ok) {
@@ -645,7 +664,36 @@ export function renderEditJourney({ mount }) {
 				return;
 			}
 
+			// Nach erfolgreichem Save: Startdatum-Marker aktualisieren
+			initialJourneyStartDate = data.start_date || payload.start_date;
+
 			setStatus(journeyStatus, "Änderungen gespeichert!", "success");
+
+			// UI auffrischen, falls Days verschoben wurden (Titel/Offsets)
+			if (shiftDays) {
+				setStatus(daysStatus, "Lade Tage…", "loading");
+				const dRes = await fetch(`${API}/days/by-journey/${journeyId}`);
+				const days = await dRes.json().catch(() => []);
+				if (dRes.ok) {
+					daysList.innerHTML = "";
+					for (const d of days) {
+						const localId = `day-${d.id}`;
+						const wrapper = document.createElement("div");
+						wrapper.innerHTML = dayTemplate({ localId });
+						const dayCardEl = wrapper.firstElementChild;
+						daysList.appendChild(dayCardEl);
+						const activities = await loadActivities(d.id);
+						wireDayCard(dayCardEl, d, activities);
+					}
+					setStatus(daysStatus, "", "");
+				} else {
+					setStatus(
+						daysStatus,
+						"Tage konnten nicht neu geladen werden.",
+						"error",
+					);
+				}
+			}
 		} catch (err) {
 			console.error(err);
 			setStatus(
@@ -699,6 +747,8 @@ export function renderEditJourney({ mount }) {
 			form.querySelector("[name='end_date']").value = journey.end_date || "";
 			form.querySelector("[name='description']").value =
 				journey.description || "";
+			// Startdatum merken, um später festzustellen ob verschoben wurde
+			initialJourneyStartDate = journey.start_date || null;
 
 			setStatus(journeyStatus, "", "");
 
