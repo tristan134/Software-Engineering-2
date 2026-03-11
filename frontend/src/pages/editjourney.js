@@ -259,6 +259,18 @@ export function renderEditJourney({ mount }) {
 		let editingActivityId = null;
 		let isEditingDay = false;
 
+		function setActivityDeleteDisabled(activityId, disabled) {
+			const btn = activitiesListEl.querySelector(
+				`[data-delete-activity="${activityId}"]`,
+			);
+			if (!btn) return;
+			btn.disabled = Boolean(disabled);
+			btn.classList.toggle("is-disabled", Boolean(disabled));
+			btn.title = disabled
+				? "Während dem Bearbeiten kann die Aktivität nicht gelöscht werden. Bitte erst speichern."
+				: "";
+		}
+
 		function updateDayTitleFromDate() {
 			if (!dayTitleEl) return;
 			const dayDate = dayForm.querySelector("[name='date']")?.value;
@@ -381,6 +393,17 @@ export function renderEditJourney({ mount }) {
 			if (delBtn) {
 				const activityId = Number(delBtn.getAttribute("data-delete-activity"));
 				if (!activityId) return;
+
+				// Wenn gerade diese Aktivität bearbeitet wird: Löschen verhindern
+				if (editingActivityId === activityId) {
+					setStatus(
+						actStatusEl,
+						"Diese Aktivität wird gerade bearbeitet. Bitte erst speichern, dann löschen.",
+						"error",
+					);
+					return;
+				}
+
 				if (!confirm("Aktivität wirklich löschen?")) return;
 
 				setStatus(actStatusEl, "Lösche Aktivität…", "loading");
@@ -416,7 +439,14 @@ export function renderEditJourney({ mount }) {
 				const act = activities.find((x) => x.id === activityId);
 				if (!act) return;
 
+				// Falls bereits eine andere Aktivität im Edit ist, deren Delete wieder aktivieren
+				if (editingActivityId && editingActivityId !== activityId) {
+					setActivityDeleteDisabled(editingActivityId, false);
+				}
+
 				editingActivityId = activityId;
+				setActivityDeleteDisabled(activityId, true);
+
 				activityForm.style.display = "block";
 				activityForm.querySelector("[name='title']").value = act.title || "";
 				activityForm.querySelector("[name='start_time']").value = fmtTime(
@@ -559,6 +589,8 @@ export function renderEditJourney({ mount }) {
 					activities = activities.map((a) =>
 						a.id === editingActivityId ? data : a,
 					);
+					// Delete wieder erlauben
+					setActivityDeleteDisabled(editingActivityId, false);
 					editingActivityId = null;
 					setStatus(actStatusEl, "Aktivität aktualisiert!", "success");
 				} else {
