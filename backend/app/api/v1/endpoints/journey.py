@@ -102,14 +102,15 @@ def update_journey(
         for d in journey.days:
             d.date = d.date + delta
 
-        # Validierung: liegen die verschobenen Tage im neuen Zeitraum?
-        if journey.start_date and journey.end_date:
-            for d in journey.days:
-                if d.date < journey.start_date or d.date > journey.end_date:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Durch das Verschieben liegen mindestens ein Tag außerhalb des neuen Reisezeitraums.",
-                    )
+    # Validierung: liegen die (ggf. verschobenen) Tage im neuen Zeitraum?
+    # Gilt auch beim reinen Verkürzen/Ändern von start/end ohne shift_days.
+    if journey.start_date and journey.end_date:
+        for d in journey.days:
+            if d.date < journey.start_date or d.date > journey.end_date:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Durch das Verschieben liegen mindestens ein Tag außerhalb des neuen Reisezeitraums. Bitte die entsprechenden Tage zuerst löschen.",
+                )
 
     db.commit()
     db.refresh(journey)
