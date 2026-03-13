@@ -1,5 +1,39 @@
 import "../css/fulljourney.css";
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function parseISODateOnlyToUTC(dateStr) {
+	if (!dateStr || typeof dateStr !== "string") return null;
+	const dateOnly = dateStr.includes("T") ? dateStr.split("T")[0] : dateStr;
+	const m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(dateOnly);
+	if (!m) return null;
+	const year = Number(m[1]);
+	const month = Number(m[2]);
+	const day = Number(m[3]);
+	if (
+		!Number.isInteger(year) ||
+		!Number.isInteger(month) ||
+		!Number.isInteger(day)
+	)
+		return null;
+	return new Date(Date.UTC(year, month - 1, day));
+}
+
+function diffCalendarDaysUTC(a, b) {
+	if (!(a instanceof Date) || Number.isNaN(a.getTime())) return null;
+	if (!(b instanceof Date) || Number.isNaN(b.getTime())) return null;
+	return Math.round((a.getTime() - b.getTime()) / MS_PER_DAY);
+}
+
+function getJourneyDayNumber({ journeyStartDate, dayDate }) {
+	const start = parseISODateOnlyToUTC(journeyStartDate);
+	const day = parseISODateOnlyToUTC(dayDate);
+	if (!start || !day) return null;
+	const delta = diffCalendarDaysUTC(day, start);
+	if (delta == null) return null;
+	return delta + 1;
+}
+
 export async function renderFullJourney({ mount }) {
 	const hash = window.location.hash;
 	const id = hash.split("/")[2];
@@ -58,7 +92,13 @@ export async function renderFullJourney({ mount }) {
 
             </div>
             <div class="timeline">
-                ${journey.days.map((d, i) => renderDay(d, i, journey.days.length)).join("")}
+                ${journey.days
+									.map((d, i) =>
+										renderDay(d, i, journey.days.length, {
+											journeyStartDate: journey.start_date,
+										}),
+									)
+									.join("")}
             </div>
 
         </section>
@@ -69,22 +109,29 @@ export async function renderFullJourney({ mount }) {
 	}
 }
 
-function renderDay(day, index, total) {
+function renderDay(day, index, total, { journeyStartDate } = {}) {
+	const tagNumber = getJourneyDayNumber({
+		journeyStartDate,
+		dayDate: day.date,
+	});
+	const tagLabel = tagNumber != null ? `Tag ${tagNumber}` : `Tag ${index + 1}`;
+	const activities = Array.isArray(day.activities) ? day.activities : [];
+
 	return `
     <div class="timeline-item">
         <div class="timeline-marker"></div>
         ${index < total - 1 ? `<div class="timeline-line"></div>` : ""}
 
         <div class="timeline-content">
-            <h3 class="timeline-day-title">${day.title}</h3>
+            <h3 class="timeline-day-title">${tagLabel}: ${day.title}</h3>
             <p><strong>Datum:</strong> ${formatDate(day.date)}</p>
 
             <h4 class="timeline-activities-title">Aktivitäten</h4>
 
             ${
-							day.activities.length === 0
+							activities.length === 0
 								? `<p class="text-muted">Keine Aktivitäten vorhanden.</p>`
-								: day.activities.map(renderActivity).join("")
+								: activities.map(renderActivity).join("")
 						}
         </div>
     </div>
@@ -99,6 +146,8 @@ function renderActivity(activity) {
 	if (start && end) timeDisplay = `${start} – ${end}`;
 	else if (start) timeDisplay = start;
 
+	const files = Array.isArray(activity.files) ? activity.files : [];
+
 	return `
     <div class="activity-timeline-item">
 
@@ -112,9 +161,9 @@ function renderActivity(activity) {
             <h5 class="activity-files-title">Dateien</h5>
 
             ${
-							activity.files.length === 0
+							files.length === 0
 								? `<p class="text-muted">Keine Dateien vorhanden.</p>`
-								: activity.files.map(renderFile).join("")
+								: files.map(renderFile).join("")
 						}
         </div>
     </div>
