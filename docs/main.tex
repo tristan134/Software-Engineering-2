@@ -1,0 +1,70 @@
+\documentclass[12pt,a4paper]{article}
+% Encoding, language, fonts
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage{lmodern}
+\usepackage{csquotes}
+% Page geometry and spacing
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{comment}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{adjustbox}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{minted}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black
+}
+\setlength{\parindent}{0pt}
+
+% Title info
+\onehalfspacing
+\title{\textbf{Journeo - Bedienungsanleitung}}
+\date{}
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\onehalfspacing
+
+\begin{center}
+    \begin{tabular}{@{}ll@{}}
+        \textbf{Autoren:} & Tristan Häß, Robin Schiffmacher\\[1cm]
+        \textbf{Kurs:}         & TINF23CS2 \\[1cm]
+        \textbf{Veranstaltung:}& Advanced Software Engineering \\[1cm]
+        \textbf{Dozent:}       & Philipp Fruck \\[1cm]
+        \textbf{Institution:}  & DHBW Mannheim \\[1cm]
+    \end{tabular}
+\end{center}
+
+\newpage
+\tableofcontents
+
+\newpage
+\setcounter{page}{1}
+
+\section{Journeo}
+\subsection{Überblick}
+\subsection{Architektur}
+
+\newpage
+\section{Guides}
+    \subsection{User}
+    \subsection{Developer}
+    \subsection{Admin}
+\end{document}
