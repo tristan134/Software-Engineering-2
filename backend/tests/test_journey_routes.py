@@ -28,8 +28,22 @@ def test_get_all_journeys_returns_summaries_without_days(client):
     data = lr.json()
     assert len(data) == 2
 
+    r3 = _create_journey(
+        client, title="ALT", start_date="2025-01-01", end_date="2025-01-02"
+    )
+    assert r3.status_code == 201, r3.text
+
+    lr2 = client.get("/api/v1/journey")
+    assert lr2.status_code == 200, lr2.text
+    data2 = lr2.json()
+    assert len(data2) == 3
+
+    # Neueste Reisedaten zuerst: 2026-07-01 (A/B) vor 2025-01-01 (ALT)
+    assert data2[0]["start_date"] >= data2[1]["start_date"]
+    assert data2[-1]["title"] == "ALT"
+
     # response_model=ShowJourneySummarize => keine days im Listing
-    for item in data:
+    for item in data2:
         assert "id" in item
         assert "title" in item
         assert "start_date" in item
@@ -38,7 +52,7 @@ def test_get_all_journeys_returns_summaries_without_days(client):
         assert "days" not in item
 
     # price serialisiert von Decimal -> float / None
-    item_by_title = {i["title"]: i for i in data}
+    item_by_title = {i["title"]: i for i in data2}
     assert isinstance(item_by_title["A"]["price"], float)
     assert item_by_title["B"]["price"] is None
 

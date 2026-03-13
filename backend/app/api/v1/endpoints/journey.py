@@ -12,7 +12,15 @@ router = APIRouter(prefix="/journey", tags=["journey"])
 
 @router.get("", response_model=List[ShowJourneySummarize])
 def get_all_journeys(db: Session = Depends(get_db)):
-    return db.query(models.Journey).all()
+    return (
+        db.query(models.Journey)
+        .order_by(
+            models.Journey.start_date.desc(),
+            models.Journey.end_date.desc(),
+            models.Journey.id.desc(),
+        )
+        .all()
+    )
 
 
 @router.get("/{journey_id}", response_model=Journey)
