@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from app.db.session import get_db
 from app.db.models import Journey, Day
 from app.db.schemas import DayCreate
@@ -13,6 +15,19 @@ def create_day(payload: DayCreate, db: Session = Depends(get_db)):
     journey = db.get(Journey, payload.journey_id)
     if not journey:
         raise HTTPException(status_code=404, detail="Journey nicht gefunden")
+
+    # Duplikate verhindern: pro Reise darf ein Datum nur einmal existieren
+    existing = db.scalar(
+        select(Day.id).where(
+            Day.journey_id == payload.journey_id,
+            Day.date == payload.date,
+        )
+    )
+    if existing is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
+        )
 
     if payload.date and journey.start_date and payload.date < journey.start_date:
         raise HTTPException(
@@ -29,7 +44,16 @@ def create_day(payload: DayCreate, db: Session = Depends(get_db)):
 
     day = Day(title=stripped_title, journey_id=payload.journey_id, date=payload.date)
     db.add(day)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        # Fallback falls UniqueConstraint greift
+        raise HTTPException(
+            status_code=400,
+            detail="Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
+        )
+
     db.refresh(day)
     return day
 
@@ -59,6 +83,20 @@ def update_day(day_id: int, payload: schemas.DayUpdate, db: Session = Depends(ge
         day.title = t
 
     if payload.date is not None:
+        # Duplikate verhindern (anderer Day mit gleichem Datum in derselben Reise)
+        existing = db.scalar(
+            select(Day.id).where(
+                Day.journey_id == day.journey_id,
+                Day.date == payload.date,
+                Day.id != day.id,
+            )
+        )
+        if existing is not None:
+            raise HTTPException(
+                status_code=400,
+                detail="Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
+            )
+
         if journey.start_date and payload.date < journey.start_date:
             raise HTTPException(
                 status_code=400, detail="day.date liegt vor journey.start_date"
@@ -69,7 +107,15 @@ def update_day(day_id: int, payload: schemas.DayUpdate, db: Session = Depends(ge
             )
         day.date = payload.date
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
+        )
+
     db.refresh(day)
     return day
 

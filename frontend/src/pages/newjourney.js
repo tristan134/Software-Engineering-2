@@ -71,6 +71,41 @@ export function renderNewJourney({ mount }) {
 
 	let journeyId = null;
 	let dayCounter = 0;
+	// Merkt alle bereits belegten Tages-Daten dieser Reise (YYYY-MM-DD)
+	const usedDayDates = new Set();
+
+	function normalizeDayDate(value) {
+		return (value || "").toString().trim();
+	}
+
+	function isDuplicateDayDate({ date, currentDayId }) {
+		const d = normalizeDayDate(date);
+		if (!d) return false;
+		for (const entry of usedDayDates) {
+			const [ed, eid] = entry.split("|");
+			if (ed !== d) continue;
+			if (currentDayId && eid && Number(eid) === Number(currentDayId)) continue;
+			return true;
+		}
+		return false;
+	}
+
+	function registerUsedDate({ date, dayId }) {
+		const d = normalizeDayDate(date);
+		if (!d) return;
+		if (dayId) {
+			usedDayDates.add(`${d}|${Number(dayId)}`);
+		} else {
+			usedDayDates.add(d);
+		}
+	}
+
+	function unregisterUsedDate({ date, dayId }) {
+		const d = normalizeDayDate(date);
+		if (!d) return;
+		if (dayId) usedDayDates.delete(`${d}|${Number(dayId)}`);
+		usedDayDates.delete(d);
+	}
 
 	function setStatus(el, text, type) {
 		el.textContent = text || "";
@@ -263,6 +298,7 @@ export function renderNewJourney({ mount }) {
 		let activities = [];
 		let editingActivityId = null;
 		let isEditingDay = false;
+		let lastSavedDate = null;
 
 		function setActivityDeleteDisabled(activityId, disabled) {
 			const btn = activitiesListEl.querySelector(
@@ -342,6 +378,8 @@ export function renderNewJourney({ mount }) {
 					return;
 				}
 
+				// Datum aus Set entfernen
+				unregisterUsedDate({ date: lastSavedDate, dayId: savedDayId });
 				// UI entfernen
 				dayCardEl.remove();
 			} catch (err) {
@@ -482,15 +520,27 @@ export function renderNewJourney({ mount }) {
 			if (!ensureJourneySaved()) return;
 
 			const fd = new FormData(dayForm);
+			const nextDate = normalizeDayDate(fd.get("date"));
+
+			// Duplicate-Check VOR Request
+			if (isDuplicateDayDate({ date: nextDate, currentDayId: savedDayId })) {
+				setStatus(
+					dayStatusEl,
+					"Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
+					"error",
+				);
+				return;
+			}
+
 			const payloadCreate = {
 				journey_id: journeyId,
 				title: (fd.get("title") || "").toString(),
-				date: (fd.get("date") || "").toString(),
+				date: nextDate,
 			};
 
 			const payloadUpdate = {
 				title: (fd.get("title") || "").toString(),
-				date: (fd.get("date") || "").toString(),
+				date: nextDate,
 			};
 
 			const isUpdate = Boolean(savedDayId);
@@ -530,6 +580,13 @@ export function renderNewJourney({ mount }) {
 
 				// Bei Create: ID merken
 				if (!savedDayId) savedDayId = data.id;
+
+				// usedDayDates aktualisieren
+				if (lastSavedDate && lastSavedDate !== normalizeDayDate(data?.date)) {
+					unregisterUsedDate({ date: lastSavedDate, dayId: savedDayId });
+				}
+				lastSavedDate = normalizeDayDate(data?.date || nextDate);
+				registerUsedDate({ date: lastSavedDate, dayId: savedDayId });
 
 				// Nach Save: wieder sperren
 				dayForm.querySelectorAll("input").forEach((i) => {

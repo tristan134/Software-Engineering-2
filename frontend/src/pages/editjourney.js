@@ -75,6 +75,55 @@ export function renderEditJourney({ mount }) {
 	const endDateEl = form.querySelector("#end_date");
 
 	let initialJourneyStartDate = null;
+	// Merkt alle bereits belegten Tages-Daten dieser Reise (YYYY-MM-DD)
+	const usedDayDates = new Set();
+
+	function normalizeDayDate(value) {
+		return (value || "").toString().trim();
+	}
+
+	function isDuplicateDayDate({ date, currentDayId }) {
+		const d = normalizeDayDate(date);
+		if (!d) return false;
+		for (const entry of usedDayDates) {
+			// entry-Formate:
+			// - "YYYY-MM-DD" (unsaved/unknown)
+			// - "YYYY-MM-DD|<id>" (saved)
+			const [ed, eid] = entry.split("|");
+			if (ed !== d) continue;
+			if (currentDayId && eid && Number(eid) === Number(currentDayId)) continue;
+			// Gleicher Tag oder anderer Day hat bereits dieses Datum
+			return true;
+		}
+		return false;
+	}
+
+	function registerUsedDate({ date, dayId }) {
+		const d = normalizeDayDate(date);
+		if (!d) return;
+		if (dayId) {
+			usedDayDates.add(`${d}|${Number(dayId)}`);
+		} else {
+			usedDayDates.add(d);
+		}
+	}
+
+	function unregisterUsedDate({ date, dayId }) {
+		const d = normalizeDayDate(date);
+		if (!d) return;
+		if (dayId) {
+			usedDayDates.delete(`${d}|${Number(dayId)}`);
+		}
+		// Wenn es als "unsaved" registriert war, auch entfernen
+		usedDayDates.delete(d);
+	}
+
+	function rebuildUsedDatesFromDays(days) {
+		usedDayDates.clear();
+		(days || []).forEach((day) => {
+			if (day?.date) registerUsedDate({ date: day.date, dayId: day.id });
+		});
+	}
 
 	function setStatus(el, text, type) {
 		el.textContent = text || "";
@@ -260,6 +309,15 @@ export function renderEditJourney({ mount }) {
 			: [];
 		let editingActivityId = null;
 		let isEditingDay = false;
+		// Merkt das zuletzt gespeicherte Datum dieses Cards (für Update/Delete)
+		let lastSavedDate = initialDay?.date
+			? normalizeDayDate(initialDay.date)
+			: null;
+
+		// Wenn initialDay bereits existiert: Datum im Set registrieren
+		if (initialDay?.date && initialDay?.id) {
+			registerUsedDate({ date: initialDay.date, dayId: initialDay.id });
+		}
 
 		function setActivityDeleteDisabled(activityId, disabled) {
 			const btn = activitiesListEl.querySelector(
@@ -345,6 +403,8 @@ export function renderEditJourney({ mount }) {
 					);
 					return;
 				}
+				// Datum aus Set entfernen
+				unregisterUsedDate({ date: lastSavedDate, dayId: savedDayId });
 				dayCardEl.remove();
 			} catch (err) {
 				console.error(err);
@@ -470,6 +530,17 @@ export function renderEditJourney({ mount }) {
 			e.preventDefault();
 
 			const fd = new FormData(dayForm);
+			const nextDate = normalizeDayDate(fd.get("date"));
+
+			// Duplicate-Check VOR Request
+			if (isDuplicateDayDate({ date: nextDate, currentDayId: savedDayId })) {
+				setStatus(
+					dayStatusEl,
+					"Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
+					"error",
+				);
+				return;
+			}
 
 			const isUpdate = Boolean(savedDayId);
 			const url = isUpdate ? `${API}/days/${savedDayId}` : `${API}/days/`;
@@ -478,12 +549,12 @@ export function renderEditJourney({ mount }) {
 			const payload = isUpdate
 				? {
 						title: (fd.get("title") || "").toString(),
-						date: (fd.get("date") || "").toString(),
+						date: nextDate,
 					}
 				: {
 						journey_id: journeyId,
 						title: (fd.get("title") || "").toString(),
-						date: (fd.get("date") || "").toString(),
+						date: nextDate,
 					};
 
 			setStatus(
@@ -509,12 +580,23 @@ export function renderEditJourney({ mount }) {
 					return;
 				}
 
+				// Bei Create: ID merken
 				if (!savedDayId) {
 					savedDayId = data.id;
 					// nach Create direkt Activities laden
 					activities = await loadActivities(savedDayId);
 					renderActivities(activitiesListEl, activities);
 				}
+
+				// usedDayDates aktualisieren (bei Update evtl. altes Datum entfernen)
+				if (
+					lastSavedDate &&
+					(lastSavedDate !== normalizeDayDate(data?.date) || !isUpdate)
+				) {
+					unregisterUsedDate({ date: lastSavedDate, dayId: savedDayId });
+				}
+				lastSavedDate = normalizeDayDate(data?.date || nextDate);
+				registerUsedDate({ date: lastSavedDate, dayId: savedDayId });
 
 				dayForm.querySelectorAll("input").forEach((i) => {
 					i.disabled = true;
@@ -524,7 +606,6 @@ export function renderEditJourney({ mount }) {
 				submitBtn.textContent = "Tag speichern";
 				isEditingDay = false;
 
-				// Tag-Nummer jetzt aus Datum ableiten (nach Save/Update)
 				updateDayTitleFromDate();
 
 				setStatus(dayStatusEl, "Tag gespeichert/aktualisiert!", "success");
@@ -685,6 +766,7 @@ export function renderEditJourney({ mount }) {
 						const activities = await loadActivities(d.id);
 						wireDayCard(dayCardEl, d, activities);
 					}
+					rebuildUsedDatesFromDays(days);
 					setStatus(daysStatus, "", "");
 				} else {
 					setStatus(
@@ -762,9 +844,7 @@ export function renderEditJourney({ mount }) {
 
 			daysList.innerHTML = "";
 
-			let idx = 0;
 			for (const d of days) {
-				idx += 1;
 				const localId = `day-${d.id}`;
 
 				const wrapper = document.createElement("div");
@@ -777,6 +857,7 @@ export function renderEditJourney({ mount }) {
 				wireDayCard(dayCardEl, d, activities);
 			}
 
+			rebuildUsedDatesFromDays(days);
 			setStatus(daysStatus, "", "");
 		} catch (err) {
 			console.error(err);
