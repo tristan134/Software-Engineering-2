@@ -1,3 +1,5 @@
+import "../css/newJourney.css";
+
 export function renderEditJourney({ mount }) {
 	const API = "http://localhost:8000/api/v1";
 	const hash = window.location.hash;
@@ -174,7 +176,7 @@ export function renderEditJourney({ mount }) {
           <div class="actions-right">
             <button class="btn btn-secondary btn-sm" type="button" data-edit-day="${localId}">Bearbeiten</button>
             <button class="btn btn-secondary btn-sm" type="button" data-delete-day="${localId}">Löschen</button>
-            <button class="btn btn-secondary" type="button" data-add-activity="${localId}">+ Aktivität</button>
+            <button class="btn btn-secondary btn-sm" type="button" data-add-activity="${localId}">+ Aktivität</button>
           </div>
         </div>
 
@@ -215,7 +217,10 @@ export function renderEditJourney({ mount }) {
 
           <div class="actions">
             <div class="form-status" data-activity-status="${localId}"></div>
-            <button class="btn btn-accent" type="submit">Aktivität speichern</button>
+            <div class="flex gap-md">
+              <button class="btn btn-secondary" type="button" data-cancel-activity="${localId}">Abbrechen</button>
+              <button class="btn btn-accent" type="submit">Aktivität speichern</button>
+            </div>
           </div>
         </form>
 
@@ -288,6 +293,9 @@ export function renderEditJourney({ mount }) {
 		);
 		const actStatusEl = dayCardEl.querySelector(
 			`[data-activity-status="${localId}"]`,
+		);
+		const cancelActivityBtn = dayCardEl.querySelector(
+			`[data-cancel-activity="${localId}"]`,
 		);
 		const activitiesListEl = dayCardEl.querySelector(
 			`[data-activities-list="${localId}"]`,
@@ -439,6 +447,20 @@ export function renderEditJourney({ mount }) {
 			);
 		});
 
+		function cancelActivityEdit() {
+			if (editingActivityId) {
+				setActivityDeleteDisabled(editingActivityId, false);
+				editingActivityId = null;
+			}
+			setStatus(actStatusEl, "", "");
+			activityForm.reset();
+			activityForm.style.display = "none";
+		}
+
+		cancelActivityBtn?.addEventListener("click", () => {
+			cancelActivityEdit();
+		});
+
 		addActivityBtn.addEventListener("click", () => {
 			if (!savedDayId) {
 				setStatus(dayStatusEl, "Bitte zuerst den Tag speichern.", "error");
@@ -446,6 +468,9 @@ export function renderEditJourney({ mount }) {
 			}
 			activityForm.style.display =
 				activityForm.style.display === "none" ? "block" : "none";
+			if (activityForm.style.display === "none") {
+				cancelActivityEdit();
+			}
 		});
 
 		activitiesListEl.addEventListener("click", async (e) => {
@@ -684,6 +709,7 @@ export function renderEditJourney({ mount }) {
 				renderActivities(activitiesListEl, activities);
 				activityForm.reset();
 				activityForm.style.display = "none";
+				cancelActivityEdit();
 			} catch (err) {
 				console.error(err);
 				setStatus(

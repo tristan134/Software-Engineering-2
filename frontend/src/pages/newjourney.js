@@ -1,3 +1,5 @@
+import "../css/newJourney.css";
+
 export function renderNewJourney({ mount }) {
 	mount.innerHTML = `
     <section class="landing">
@@ -164,7 +166,7 @@ export function renderNewJourney({ mount }) {
           <div class="actions-right">
           <button class="btn btn-secondary btn-sm" type="button" data-edit-day="${localId}">Bearbeiten</button>
           <button class="btn btn-secondary btn-sm" type="button" data-delete-day="${localId}">Löschen</button>
-          <button class="btn btn-secondary" type="button" data-add-activity="${localId}">+ Aktivität</button>
+          <button class="btn btn-secondary btn-sm" type="button" data-add-activity="${localId}">+ Aktivität</button>
         </div>
         </div>
 
@@ -208,7 +210,10 @@ export function renderNewJourney({ mount }) {
 
           <div class="actions">
             <div class="form-status" data-activity-status="${localId}"></div>
-            <button class="btn btn-accent" type="submit">Aktivität speichern</button>
+            <div class="flex gap-md">
+              <button class="btn btn-secondary" type="button" data-cancel-activity="${localId}">Abbrechen</button>
+              <button class="btn btn-accent" type="submit">Aktivität speichern</button>
+            </div>
           </div>
         </form>
 
@@ -280,6 +285,9 @@ export function renderNewJourney({ mount }) {
 		);
 		const actStatusEl = dayCardEl.querySelector(
 			`[data-activity-status="${localId}"]`,
+		);
+		const cancelActivityBtn = dayCardEl.querySelector(
+			`[data-cancel-activity="${localId}"]`,
 		);
 		const activitiesListEl = dayCardEl.querySelector(
 			`[data-activities-list="${localId}"]`,
@@ -420,6 +428,21 @@ export function renderNewJourney({ mount }) {
 			);
 		});
 
+		function cancelActivityEdit() {
+			// Edit-Mode sauber beenden
+			if (editingActivityId) {
+				setActivityDeleteDisabled(editingActivityId, false);
+				editingActivityId = null;
+			}
+			setStatus(actStatusEl, "", "");
+			activityForm.reset();
+			activityForm.style.display = "none";
+		}
+
+		cancelActivityBtn?.addEventListener("click", () => {
+			cancelActivityEdit();
+		});
+
 		activitiesListEl.addEventListener("click", async (e) => {
 			const delBtn = e.target.closest("[data-delete-activity]");
 			const editBtn = e.target.closest("[data-edit-activity]");
@@ -513,6 +536,9 @@ export function renderNewJourney({ mount }) {
 			}
 			activityForm.style.display =
 				activityForm.style.display === "none" ? "block" : "none";
+			if (activityForm.style.display === "none") {
+				cancelActivityEdit();
+			}
 		});
 
 		dayForm.addEventListener("submit", async (e) => {
@@ -608,8 +634,8 @@ export function renderNewJourney({ mount }) {
 					"success",
 				);
 
-				// Activity-Form bleibt wie bei dir: erst nach Save sinnvoll
 				activityForm.style.display = "none";
+				cancelActivityEdit();
 			} catch (err) {
 				console.error(err);
 				setStatus(
@@ -690,6 +716,7 @@ export function renderNewJourney({ mount }) {
 				renderActivities(activitiesListEl, activities);
 				activityForm.reset();
 				activityForm.style.display = "none";
+				cancelActivityEdit();
 			} catch (err) {
 				console.error(err);
 				setStatus(
