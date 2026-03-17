@@ -65,6 +65,142 @@
 \newpage
 \section{Guides}
     \subsection{User}
+
+    \newpage
     \subsection{Developer}
-    \subsection{Admin}
+    \subsubsection{Voraussetzungen}
+        Um am Projekt mitzuarbeiten, braucht ihr eine übliche Development-Umgebung mit Git sowie Docker.
+        Die lokale Entwicklung ist so aufgebaut, dass ihr die komplette Anwendung (Datenbank, Backend, Frontend)
+        über Docker Compose starten könnt. Folgende Voraussetzungen sollten auf eurem System installiert sein:
+        \begin{itemize}[leftmargin=*]
+            \item Git
+            \item Docker \& Docker Compose
+            \item Node.js \& npm
+            \item Python 3 (empfohlen für lokale Checks/Tests)
+        \end{itemize}
+
+        Bevor ihr startet, müsst ihr das Repository von GitHub klonen und in den Projektordner wechseln:
+        \begin{enumerate}
+            \item \texttt{git clone https://github.com/tristan134/Software-Engineering-2.git}
+            \item \texttt{cd Software-Engineering-2}
+        \end{enumerate}
+
+    \subsubsection{Installationen}
+    \begin{enumerate}
+        \item \texttt{pre-commit} ist verpflichtend und wird lokal installiert. Empfohlen ist die Installation über \texttt{pipx}
+            (isoliert), alternativ geht auch \texttt{pip3}.
+            \begin{itemize}[leftmargin=*]
+                \item Installation mit \texttt{pipx}: \texttt{pipx install pre-commit}
+                \item Alternative mit \texttt{pip3}: \texttt{python3 -m pip install pre-commit}
+            \end{itemize}
+            Danach sollte \texttt{pre-commit} im Repository initialisiert werden, damit die Hooks bei jedem Commit automatisch
+            laufen:
+            \begin{itemize}[leftmargin=*]
+                \item \texttt{pre-commit install}
+            \end{itemize}
+        \item \texttt{pytest} kommt in der Regel über die Backend-Dependencies. Installiert dazu die
+                Requirements des Backends:
+                \begin{itemize}[leftmargin=*]
+                    \item \texttt{python -m pip install -r backend/requirements.txt}
+                \end{itemize}
+    \end{enumerate}
+
+    \subsubsection{Entwicklung}
+        Der Code liegt getrennt in \texttt{backend/} und \texttt{frontend/}. Für die lokale Umgebung existiert
+        \texttt{docker-compose.local.yml}, das die Services direkt aus eurem Quellcode baut. Für den produktiven Betrieb gibt
+        es \texttt{docker-compose.yml}, das Images aus der Registry lädt und über die Variable \texttt{VERSION} pinnt.
+
+        \paragraph{Lokales Setup}
+            Am einfachsten ist es, lokal immer über Compose zu arbeiten. Legt dazu im Projektroot eine \texttt{.env}-Datei an
+            und tragt die benötigten Variablen ein (insbesondere \texttt{POSTGRES\_VERSION}, \texttt{POSTGRES\_USER},
+            \texttt{POSTGRES\_PASSWORD}, \texttt{POSTGRES\_DB}, \texttt{POSTGRES\_HOST}, \texttt{POSTGRES\_PORT}). Danach könnt ihr
+            die Umgebung starten:
+            \begin{itemize}[leftmargin=*]
+                \item \texttt{docker compose -f docker-compose.local.yml up \-\-build}
+            \end{itemize}
+            Wenn alles läuft, ist das Backend typischerweise unter \texttt{http://localhost:8000} erreichbar und das Frontend
+            unter \texttt{http://localhost:8080}.
+
+        \paragraph{Frontend lokal entwickeln}
+            Für schnelleres Feedback könnt ihr das Frontend auch unabhängig vom Compose-Container als Dev-Server starten.
+            Installiert zuerst die Dependencies und startet danach den Dev-Server:
+            \begin{enumerate}[leftmargin=*]
+                \item \texttt{cd frontend \&\& npm install} 
+                \item \texttt{npm run dev}
+            \end{enumerate}
+    
+        \paragraph{Git-Workflows}
+            Änderungen passieren in Feature-Branches und werden dann über Pull Requests auf den \texttt{main}-Branch gemerged.
+            Auf den \texttt{main} wird \textbf{nicht} force-gepusht. Zusätzlich gilt, dass Commits signiert werden sollen
+            (Git commit signing via GPG oder SSH), damit die Herkunft der Änderungen nachvollziehbar ist.
+
+            Bei jedem Pull Request laufen automatisch die GitHub Workflows und die Tests durch. Erst wenn alle Checks erfolgreich sind, kann gemerged werden.
+            Zudem muss jeder Pull Request von mindestens einem anderen Teammitglied reviewed und freigegeben werden, bevor er in den \texttt{main}-Branch gemerged werden kann.
+
+        \paragraph{Versionierung}
+            In \texttt{docker-compose.yml} werden produktive Images über \break \texttt{ghcr.io/...:\$\{VERSION\}} referenziert.
+            Als Konvention entspricht \texttt{VERSION} einem Git-Tag (z.B. \texttt{v1.0.0}). Sobald ein neues Feature fertig ist
+            und der Pull Request durchgelaufen ist, soll ein neues Tag auf dem \texttt{main}-Branch erstellt und gepusht werden, damit die neue Version in Produktion deployt werden kann.
+            Dann läuft automatisch eine Action an, die die Images baut und in die Registry pusht.
+    
+            Folgende Tag-Konventionen ist für die Versionierung vorgesehen:
+            \begin{itemize}[leftmargin=*]
+                \item \texttt{vX.Y.Z}
+            \end{itemize}
+            Zu den Bedeutungen der einzelnen Stellen:
+            \begin{itemize}[leftmargin=*]
+                \item \texttt{X}: Major-Version, z.B. bei Breaking Changes
+                \item \texttt{Y}: Minor-Version, z.B. bei neuen Features ohne Breaking Changes
+                \item \texttt{Z}: Patch-Version, z.B. bei Bugfixes
+            \end{itemize}
+
+    \subsubsection{Tests}
+        Alle Backend-Tests liegen unter \texttt{backend/tests} und werden lokal mit \texttt{pytest} ausgeführt.
+        \textbf{Regel: Sobald ein Feature implementiert oder ein Bugfix gemacht wird, muss ein passender Test ergänzt werden.} Die Tests sollen
+        \textbf{lokal} ausführbar sein und vor dem Öffnen eines Pull Requests auch lokal einmal gelaufen sein.
+
+    \subsubsection{Troubleshooting}
+        Wenn die Datenbank nicht startet, sind es fast immer fehlende bzw. inkonsistente \break \texttt{POSTGRES\_*}-Variablen oder ein
+        kaputter Volume-Zustand. In letzter Konsequenz hilft \texttt{docker compose -f docker-compose.local.yml down -v} (Achtung: löscht Volumes und damit lokale Daten!).
+        Wenn Ports belegt sind, prüft, ob \texttt{8000} (Backend) oder \texttt{8080} (Frontend) bereits von anderen Diensten verwendet werden.
+\newpage
+\subsection{Admin}
+        Der produktive Betrieb ist containerbasiert und wird über \texttt{docker-compose.yml} beschrieben. Im Gegensatz zur
+        lokalen Entwicklung wird in Produktion nicht aus dem Quellcode gebaut, sondern es werden versionierte Images aus der
+        Container-Registry geladen. Dadurch ist ein Deployment reproduzierbar: Dieselbe \texttt{VERSION} bedeutet dieselben Images.
+
+    \subsubsection{Voraussetzungen}
+        Benötigt wird ein Server/VM mit Docker und Docker Compose sowie ausreichend Speicherplatz für die Daten.
+        Ein minimaler Betrieb kommt mit zwei nach außen geöffneten Ports aus: \texttt{8080} für das Frontend (UI) und optional \texttt{8000} für das Backend (API), falls die API zusätzlich direkt erreichbar sein soll.
+
+    \subsubsection{Produktives Setup}
+        Kopiert mindestens die \texttt{docker-compose.yml} auf den Server und legt eine \texttt{.env}-Datei daneben, in
+        der ihr Konfiguration und Versionierung festlegt. Relevant sind insbesondere \texttt{VERSION} (Image-Tag), sowie die
+        \texttt{POSTGRES\_*}-Variablen. In einem Compose-Setup ist \texttt{POSTGRES\_HOST} typischerweise der Service-Name
+        \texttt{db} und \texttt{POSTGRES\_PORT} ist \texttt{5432}.
+
+        Starten könnt ihr danach mit \texttt{docker compose up -d}. Die Datenbank hat einen Healthcheck und das Backend startet erst zuverlässig, wenn die DB als healthy markiert ist.
+
+    \subsubsection{Daten}
+    Die PostgreSQL-Daten liegen in dem Docker-Volume \texttt{se2data}. Dieses Volume ist der Grund, warum ein einfacher Redeploy ohne Datenverlust möglich ist. Wichtig: \texttt{docker compose down -v} löscht Volumes und damit die Daten, das sollte in Produktion nur in Ausnahmefällen und mit Backup passieren.
+
+    \subsubsection{Update}
+    Ein Update besteht im Wesentlichen daraus, die \texttt{VERSION} in der Server-\texttt{.env} zu aktualisieren und anschließend neue Images zu ziehen und die Services neu zu starten:
+    \begin{itemize}[leftmargin=*]
+        \item \texttt{docker compose pull}
+        \item \texttt{docker compose up -d}
+    \end{itemize}
+    Danach sollten die Logs kurz geprüft werden (z.B. \texttt{docker compose logs -f}). Falls eine Version fehlschlägt, könnt ihr mit dem vorherigen \texttt{VERSION}-Wert schnell zurückrollen.
+
+    \subsubsection{Monitoring}
+    Ein minimalistisches Monitoring lässt sich über Docker-Bordmittel abdecken:
+    \begin{itemize}
+        \item \texttt{docker compose ps} für den Status
+        \item \texttt{docker stats} für Ressourcen
+        \item \texttt{docker compose logs} für Fehleranalyse.
+    \end{itemize}
+
+    \subsubsection{Troubleshooting}
+    Wenn das Backend die Datenbank nicht erreicht, ist häufig \texttt{POSTGRES\_HOST} falsch gesetzt (in Produktion meist \texttt{db}). Wenn das Frontend nicht erreichbar ist, sind häufig Firewall/Portfreigaben die Ursache. Bei einem \enquote{broken} Release ist ein Rollback durch Zurücksetzen von \texttt{VERSION} und erneutes \texttt{docker compose up -d} der schnellste Weg.
+
 \end{document}
