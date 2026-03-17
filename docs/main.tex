@@ -86,12 +86,12 @@
         \end{enumerate}
 
     \subsubsection{Installationen}
+        Für die Installationen ist es sinnvoll, eine virtuelle Entwicklungsumgebung zu nutzen, damit die Dependencies isoliert sind.
+
     \begin{enumerate}
-        \item \texttt{pre-commit} ist verpflichtend und wird lokal installiert. Empfohlen ist die Installation über \texttt{pipx}
-            (isoliert), alternativ geht auch \texttt{pip3}.
+        \item \texttt{pre-commit} ist verpflichtend und wird lokal installiert. Empfohlen ist die Installation über \texttt{pip}:
             \begin{itemize}[leftmargin=*]
-                \item Installation mit \texttt{pipx}: \texttt{pipx install pre-commit}
-                \item Alternative mit \texttt{pip3}: \texttt{python3 -m pip install pre-commit}
+                \item \texttt{pip install pre-commit}
             \end{itemize}
             Danach sollte \texttt{pre-commit} im Repository initialisiert werden, damit die Hooks bei jedem Commit automatisch
             laufen:
@@ -100,7 +100,7 @@
             \end{itemize}
         \item \texttt{pytest} kommt in der Regel über die Backend-Dependencies. Dazu sollten die Requirements des Backends installiert werden:
                 \begin{itemize}[leftmargin=*]
-                    \item \texttt{python3 -m pip install -r backend/requirements.txt}
+                    \item \texttt{pip install -r backend/requirements.txt}
                 \end{itemize}
     \end{enumerate}
 
@@ -116,14 +116,15 @@
             \begin{itemize}[leftmargin=*]
                 \item \texttt{docker compose -f docker-compose.local.yml up \-\-build}
             \end{itemize}
-            Wenn alles läuft, ist das Backend typischerweise unter \texttt{http://localhost:8000} erreichbar und das Frontend
+            Wenn alles läuft, ist das Backend unter \texttt{http://localhost:8000} erreichbar und das Frontend
             unter \texttt{http://localhost:8080}.
 
         \paragraph{Frontend lokal entwickeln}
             Für schnelleres Feedback kann das Frontend auch unabhängig vom Compose-Container als Dev-Server starten.
             Dazu müssen zuerst die Dependencies installiert und danach der Dev-Server gestartet werden:
             \begin{enumerate}[leftmargin=*]
-                \item \texttt{cd frontend \&\& npm install} 
+                \item \texttt{cd frontend}
+                \item \texttt{npm install}
                 \item \texttt{npm run dev}
             \end{enumerate}
     
@@ -153,9 +154,12 @@
             \end{itemize}
 
     \subsubsection{Tests}
-        Alle Backend-Tests liegen unter \texttt{backend/tests} und werden lokal mit \texttt{pytest} ausgeführt.
-        \textbf{Regel: Sobald ein Feature implementiert oder ein Bugfix gemacht wird, muss ein passender Test ergänzt werden.} Die Tests sollen
-        \textbf{lokal} ausführbar sein und vor dem Öffnen eines Pull Requests auch lokal einmal gelaufen sein.
+        Sobald ein Feature implementiert oder ein Bugfix gemacht wird, die etwas an den Backend-Routen verändern, muss ein passender Test ergänzt werden. Die Tests sollen
+        \textbf{lokal} ausführbar sein und vor dem Öffnen eines Pull Requests auch lokal einmal erfolgreich durchgelaufen sein.
+        Um die Tests lokal auszuführen, kann der folgende Befehl genutzt werden:
+        \begin{itemize}[leftmargin=*]
+            \item \texttt{cd backend/tests \&\& pytest}
+        \end{itemize}
 
     \subsubsection{Troubleshooting}
         Wenn die Datenbank nicht startet, sind es fast immer fehlende bzw. inkonsistente \break \texttt{POSTGRES\_*}-Variablen oder ein
@@ -168,14 +172,15 @@
         Container-Registry geladen. Dadurch ist ein Deployment reproduzierbar: Dieselbe \texttt{VERSION} bedeutet dieselben Images.
 
     \subsubsection{Voraussetzungen}
-        Benötigt wird ein Server/VM mit Docker und Docker Compose sowie ausreichend Speicherplatz für die Daten.
-        Ein minimaler Betrieb kommt mit zwei nach außen geöffneten Ports aus: \texttt{8080} für das Frontend (UI) und optional \texttt{8000} für das Backend (API), falls die API zusätzlich direkt erreichbar sein soll.
+        Benötigt wird ein Server bzw. eine VM mit \emph{Docker} und \emph{Docker Compose} sowie ausreichend Speicherplatz für die Daten.
+        Ein minimaler Betrieb benötigt lediglich die Portfreigabe für den Port \texttt{8080} für das Frontend (UI). Der Backend-Port \texttt{8000} (API) muss nur dann zusätzlich geöffnet werden, wenn die API direkt von außen erreichbar sein soll (intern wird sie vom Frontend über \texttt{backend:8000} angesprochen).
 
     \subsubsection{Produktives Setup}
-        Die \texttt{docker-compose.yml} wird auf den Server kopiert und eine \texttt{.env}-Datei daneben angelegt werden, in
-        der die Konfiguration und Versionierung festlegt wird. Relevant sind insbesondere \texttt{VERSION} (Image-Tag), sowie die
-        \texttt{POSTGRES\_*}-Variablen. In einem Compose-Setup ist \texttt{POSTGRES\_HOST} typischerweise der Service-Name
-        \texttt{db} und \texttt{POSTGRES\_PORT} ist \texttt{5432}.
+        Die \texttt{docker-compose.yml} wird auf den Server kopiert und eine \texttt{.env}-Datei daneben angelegt, in
+        der die Konfiguration und Versionierung festlegt werden. Relevant sind insbesondere \texttt{VERSION} (Image-Tag), sowie die
+        \texttt{POSTGRES\_*}-Variablen. Besonders wichtig ist hier, dass sensible Informationen wie das Datenbankpasswort sicher gewählt werden sollen. Der Zugriff auf diesen Bereich sollte
+        demnach auch streng kontrolliert werden.
+        In einem Compose-Setup ist \texttt{POSTGRES\_HOST} typischerweise der Service-Name \texttt{db} und \texttt{POSTGRES\_PORT} ist \texttt{5432}.
 
         Über \texttt{docker compose up -d} können die Container gestartet werden. Die Datenbank hat einen Healthcheck und das Backend startet erst zuverlässig, wenn die DB als healthy markiert ist.
 
@@ -199,6 +204,6 @@
     \end{itemize}
 
     \subsubsection{Troubleshooting}
-    Wenn das Backend die Datenbank nicht erreicht, ist häufig \texttt{POSTGRES\_HOST} falsch gesetzt (in Produktion meist \texttt{db}). Wenn das Frontend nicht erreichbar ist, sind häufig Firewall/Portfreigaben die Ursache. Bei einem \enquote{broken} Release ist ein Rollback durch Zurücksetzen von \texttt{VERSION} und erneutes \texttt{docker compose up -d} der schnellste Weg.
+    Wenn das Backend die Datenbank nicht erreicht, kann es sein, dass die Containerbezeichnung für \texttt{POSTGRES\_HOST} nicht die gleiche ist wie in der \texttt{.env}-Datei. Wenn das Frontend nicht erreichbar ist, sind häufig Firewall/Portfreigaben die Ursache. Bei einem \enquote{broken} Release ist ein Rollback durch Zurücksetzen von \texttt{VERSION} und erneutes \texttt{docker compose up -d} der schnellste Weg.
 
 \end{document}
