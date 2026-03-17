@@ -69,9 +69,9 @@
     \newpage
     \subsection{Developer}
     \subsubsection{Voraussetzungen}
-        Um am Projekt mitzuarbeiten, braucht ihr eine übliche Development-Umgebung mit Git sowie Docker.
-        Die lokale Entwicklung ist so aufgebaut, dass ihr die komplette Anwendung (Datenbank, Backend, Frontend)
-        über Docker Compose starten könnt. Folgende Voraussetzungen sollten auf eurem System installiert sein:
+        Um am Projekt mitzuarbeiten, braucht man eine übliche Development-Umgebung mit Git sowie Docker.
+        Die lokale Entwicklung ist so aufgebaut, dass die komplette Anwendung (Datenbank, Backend, Frontend)
+        über Docker Compose gestartet werden kann. Folgende Voraussetzungen sollten auf dem System installiert sein:
         \begin{itemize}[leftmargin=*]
             \item Git
             \item Docker \& Docker Compose
@@ -79,7 +79,7 @@
             \item Python 3 (empfohlen für lokale Checks/Tests)
         \end{itemize}
 
-        Bevor ihr startet, müsst ihr das Repository von GitHub klonen und in den Projektordner wechseln:
+        Zu Beginn muss das Repository von GitHub geklont und in den Projektordner gewechselt werden:
         \begin{enumerate}
             \item \texttt{git clone https://github.com/tristan134/Software-Engineering-2.git}
             \item \texttt{cd Software-Engineering-2}
@@ -98,23 +98,21 @@
             \begin{itemize}[leftmargin=*]
                 \item \texttt{pre-commit install}
             \end{itemize}
-        \item \texttt{pytest} kommt in der Regel über die Backend-Dependencies. Installiert dazu die
-                Requirements des Backends:
+        \item \texttt{pytest} kommt in der Regel über die Backend-Dependencies. Dazu sollten die Requirements des Backends installiert werden:
                 \begin{itemize}[leftmargin=*]
-                    \item \texttt{python -m pip install -r backend/requirements.txt}
+                    \item \texttt{python3 -m pip install -r backend/requirements.txt}
                 \end{itemize}
     \end{enumerate}
 
     \subsubsection{Entwicklung}
         Der Code liegt getrennt in \texttt{backend/} und \texttt{frontend/}. Für die lokale Umgebung existiert
-        \texttt{docker-compose.local.yml}, das die Services direkt aus eurem Quellcode baut. Für den produktiven Betrieb gibt
+        \texttt{docker-compose.local.yml}, das die Services direkt aus dem Quellcode baut. Für den produktiven Betrieb gibt
         es \texttt{docker-compose.yml}, das Images aus der Registry lädt und über die Variable \texttt{VERSION} pinnt.
 
         \paragraph{Lokales Setup}
-            Am einfachsten ist es, lokal immer über Compose zu arbeiten. Legt dazu im Projektroot eine \texttt{.env}-Datei an
-            und tragt die benötigten Variablen ein (insbesondere \texttt{POSTGRES\_VERSION}, \texttt{POSTGRES\_USER},
-            \texttt{POSTGRES\_PASSWORD}, \texttt{POSTGRES\_DB}, \texttt{POSTGRES\_HOST}, \texttt{POSTGRES\_PORT}). Danach könnt ihr
-            die Umgebung starten:
+            Am einfachsten ist es, lokal immer über Compose zu arbeiten. Dazu soll im Projektroot eine \texttt{.env}-Datei angelegt
+            und die benötigten Variablen eingetragen werden (insbesondere \texttt{POSTGRES\_VERSION}, \texttt{POSTGRES\_USER},
+            \texttt{POSTGRES\_PASSWORD}, \texttt{POSTGRES\_DB}, \texttt{POSTGRES\_HOST}, \texttt{POSTGRES\_PORT}). Danach kann die Umgebung gestartet werden:
             \begin{itemize}[leftmargin=*]
                 \item \texttt{docker compose -f docker-compose.local.yml up \-\-build}
             \end{itemize}
@@ -122,8 +120,8 @@
             unter \texttt{http://localhost:8080}.
 
         \paragraph{Frontend lokal entwickeln}
-            Für schnelleres Feedback könnt ihr das Frontend auch unabhängig vom Compose-Container als Dev-Server starten.
-            Installiert zuerst die Dependencies und startet danach den Dev-Server:
+            Für schnelleres Feedback kann das Frontend auch unabhängig vom Compose-Container als Dev-Server starten.
+            Dazu müssen zuerst die Dependencies installiert und danach der Dev-Server gestartet werden:
             \begin{enumerate}[leftmargin=*]
                 \item \texttt{cd frontend \&\& npm install} 
                 \item \texttt{npm run dev}
@@ -162,7 +160,7 @@
     \subsubsection{Troubleshooting}
         Wenn die Datenbank nicht startet, sind es fast immer fehlende bzw. inkonsistente \break \texttt{POSTGRES\_*}-Variablen oder ein
         kaputter Volume-Zustand. In letzter Konsequenz hilft \texttt{docker compose -f docker-compose.local.yml down -v} (Achtung: löscht Volumes und damit lokale Daten!).
-        Wenn Ports belegt sind, prüft, ob \texttt{8000} (Backend) oder \texttt{8080} (Frontend) bereits von anderen Diensten verwendet werden.
+        Wenn Ports belegt sind, soll geprüft werden, ob \texttt{8000} (Backend) oder \texttt{8080} (Frontend) bereits von anderen Diensten verwendet werden.
 \newpage
 \subsection{Admin}
         Der produktive Betrieb ist containerbasiert und wird über \texttt{docker-compose.yml} beschrieben. Im Gegensatz zur
@@ -174,12 +172,12 @@
         Ein minimaler Betrieb kommt mit zwei nach außen geöffneten Ports aus: \texttt{8080} für das Frontend (UI) und optional \texttt{8000} für das Backend (API), falls die API zusätzlich direkt erreichbar sein soll.
 
     \subsubsection{Produktives Setup}
-        Kopiert mindestens die \texttt{docker-compose.yml} auf den Server und legt eine \texttt{.env}-Datei daneben, in
-        der ihr Konfiguration und Versionierung festlegt. Relevant sind insbesondere \texttt{VERSION} (Image-Tag), sowie die
+        Die \texttt{docker-compose.yml} wird auf den Server kopiert und eine \texttt{.env}-Datei daneben angelegt werden, in
+        der die Konfiguration und Versionierung festlegt wird. Relevant sind insbesondere \texttt{VERSION} (Image-Tag), sowie die
         \texttt{POSTGRES\_*}-Variablen. In einem Compose-Setup ist \texttt{POSTGRES\_HOST} typischerweise der Service-Name
         \texttt{db} und \texttt{POSTGRES\_PORT} ist \texttt{5432}.
 
-        Starten könnt ihr danach mit \texttt{docker compose up -d}. Die Datenbank hat einen Healthcheck und das Backend startet erst zuverlässig, wenn die DB als healthy markiert ist.
+        Über \texttt{docker compose up -d} können die Container gestartet werden. Die Datenbank hat einen Healthcheck und das Backend startet erst zuverlässig, wenn die DB als healthy markiert ist.
 
     \subsubsection{Daten}
     Die PostgreSQL-Daten liegen in dem Docker-Volume \texttt{se2data}. Dieses Volume ist der Grund, warum ein einfacher Redeploy ohne Datenverlust möglich ist. Wichtig: \texttt{docker compose down -v} löscht Volumes und damit die Daten, das sollte in Produktion nur in Ausnahmefällen und mit Backup passieren.
@@ -190,7 +188,7 @@
         \item \texttt{docker compose pull}
         \item \texttt{docker compose up -d}
     \end{itemize}
-    Danach sollten die Logs kurz geprüft werden (z.B. \texttt{docker compose logs -f}). Falls eine Version fehlschlägt, könnt ihr mit dem vorherigen \texttt{VERSION}-Wert schnell zurückrollen.
+    Danach sollten die Logs kurz geprüft werden (z.B. \texttt{docker compose logs -f}). Falls eine Version fehlschlägt, kann mit dem vorherigen \texttt{VERSION}-Wert schnell zurückgerollt werden.
 
     \subsubsection{Monitoring}
     Ein minimalistisches Monitoring lässt sich über Docker-Bordmittel abdecken:
