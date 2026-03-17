@@ -199,8 +199,8 @@ export function renderNewJourney({ mount }) {
 
           <div class="flex gap-md mb-md" style="flex-wrap: wrap;">
             <div class="form-group" style="flex:1; min-width: 160px;">
-              <label class="label">Start (optional)</label>
-              <input name="start_time" type="time" class="input" />
+              <label class="label">Start</label>
+              <input name="start_time" type="time" class="input" required/>
             </div>
             <div class="form-group" style="flex:1; min-width: 160px;">
               <label class="label">Ende (optional)</label>
