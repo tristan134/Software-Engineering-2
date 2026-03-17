@@ -38,7 +38,7 @@ def get_journey(journey_id: int, db: Session = Depends(get_db)):
 )
 def create_journey(payload: JourneyCreate, db: Session = Depends(get_db)):
     if not payload.title.strip():
-        raise HTTPException(status_code=400, detail="title darf nicht leer sein")
+        raise HTTPException(status_code=400, detail="Titel darf nicht leer sein")
 
     if (
         payload.start_date
@@ -46,7 +46,7 @@ def create_journey(payload: JourneyCreate, db: Session = Depends(get_db)):
         and payload.end_date < payload.start_date
     ):
         raise HTTPException(
-            status_code=400, detail="end_date darf nicht vor start_date liegen"
+            status_code=400, detail="Enddatum darf nicht vor dem Startdatum liegen"
         )
 
     journey = models.Journey(
@@ -72,12 +72,12 @@ def update_journey(
 ):
     journey = db.get(models.Journey, journey_id)
     if not journey:
-        raise HTTPException(status_code=404, detail="Journey nicht gefunden")
+        raise HTTPException(status_code=404, detail="Reise nicht gefunden")
 
     if payload.title is not None:
         t = payload.title.strip()
         if not t:
-            raise HTTPException(status_code=400, detail="title darf nicht leer sein")
+            raise HTTPException(status_code=400, detail="Titel darf nicht leer sein")
         journey.title = t
 
     if payload.start_date is not None:
@@ -92,7 +92,7 @@ def update_journey(
         and journey.end_date < journey.start_date
     ):
         raise HTTPException(
-            status_code=400, detail="end_date darf nicht vor start_date liegen"
+            status_code=400, detail="Enddatum darf nicht vor dem Startdatum liegen"
         )
 
     if payload.price is not None:

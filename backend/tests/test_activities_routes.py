@@ -47,7 +47,7 @@ def test_create_activity_happy_path_strips_title(client):
 def test_create_activity_unknown_day_returns_404(client):
     r = _create_activity(client, 999999)
     assert r.status_code == 404
-    assert r.json().get("detail") == "Day nicht gefunden"
+    assert r.json().get("detail") == "Tag nicht gefunden"
 
 
 def test_create_activity_end_before_start_returns_400(client):
@@ -61,7 +61,7 @@ def test_create_activity_end_before_start_returns_400(client):
         end_time="10:00:00",
     )
     assert r.status_code == 400
-    assert r.json().get("detail") == "Enddatum darf nicht vor Startdatum liegen"
+    assert r.json().get("detail") == "Endzeit darf nicht vor Startzeit liegen"
 
 
 def test_create_activity_title_empty_returns_400(client):
@@ -85,7 +85,7 @@ def test_list_activities_for_day_empty_returns_200_and_empty_list(client):
 def test_list_activities_for_day_unknown_day_returns_404(client):
     r = client.get("/api/v1/activities/by-day/999999")
     assert r.status_code == 404
-    assert r.json().get("detail") == "Day nicht gefunden"
+    assert r.json().get("detail") == "Tag nicht gefunden"
 
 
 def test_update_activity_happy_path_and_time_validation(client):

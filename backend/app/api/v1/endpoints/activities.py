@@ -12,7 +12,7 @@ router = APIRouter(prefix="/activities", tags=["activities"])
 def create_activity(payload: ActivityCreate, db: Session = Depends(get_db)):
     day = db.get(Day, payload.day_id)
     if not day:
-        raise HTTPException(status_code=404, detail="Day nicht gefunden")
+        raise HTTPException(status_code=404, detail="Tag nicht gefunden")
 
     if (
         payload.start_time
@@ -20,7 +20,7 @@ def create_activity(payload: ActivityCreate, db: Session = Depends(get_db)):
         and payload.end_time < payload.start_time
     ):
         raise HTTPException(
-            status_code=400, detail="Enddatum darf nicht vor Startdatum liegen"
+            status_code=400, detail="Endzeit darf nicht vor Startzeit liegen"
         )
 
     title = payload.title.strip()
@@ -43,7 +43,7 @@ def create_activity(payload: ActivityCreate, db: Session = Depends(get_db)):
 def list_activities_for_day(day_id: int, db: Session = Depends(get_db)):
     day = db.get(Day, day_id)
     if not day:
-        raise HTTPException(status_code=404, detail="Day nicht gefunden")
+        raise HTTPException(status_code=404, detail="Tag nicht gefunden")
     return day.activities  # vorausgesetzt Relationship existiert
 
 

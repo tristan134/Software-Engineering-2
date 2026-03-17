@@ -33,7 +33,7 @@ def test_create_day_happy_path_strips_title(client):
 def test_create_day_requires_existing_journey_returns_404(client):
     r = _create_day(client, 999999)
     assert r.status_code == 404
-    assert r.json().get("detail") == "Journey nicht gefunden"
+    assert r.json().get("detail") == "Reise nicht gefunden"
 
 
 def test_create_day_title_empty_returns_400(client):
@@ -49,7 +49,7 @@ def test_create_day_date_before_journey_start_returns_400(client):
 
     r = _create_day(client, journey["id"], date="2026-07-01")
     assert r.status_code == 400
-    assert r.json().get("detail") == "day.date liegt vor journey.start_date"
+    assert r.json().get("detail") == "Datum liegt vor dem Startdatum der Reise"
 
 
 def test_create_day_date_after_journey_end_returns_400(client):
@@ -57,7 +57,7 @@ def test_create_day_date_after_journey_end_returns_400(client):
 
     r = _create_day(client, journey["id"], date="2026-07-10")
     assert r.status_code == 400
-    assert r.json().get("detail") == "day.date liegt nach journey.end_date"
+    assert r.json().get("detail") == "Datum liegt hinter dem Enddatum der Reise"
 
 
 def test_list_days_for_journey_empty_returns_200_and_empty_list(client):
@@ -71,7 +71,7 @@ def test_list_days_for_journey_empty_returns_200_and_empty_list(client):
 def test_list_days_for_journey_unknown_journey_returns_404(client):
     r = client.get("/api/v1/days/by-journey/999999")
     assert r.status_code == 404
-    assert r.json().get("detail") == "Journey nicht gefunden"
+    assert r.json().get("detail") == "Reise nicht gefunden"
 
 
 def test_update_day_happy_path_and_date_validation(client):
@@ -93,18 +93,18 @@ def test_update_day_happy_path_and_date_validation(client):
     # Negativ: date vor journey.start_date
     r3 = client.put(f"/api/v1/days/{created_day['id']}", json={"date": "2026-06-30"})
     assert r3.status_code == 400
-    assert r3.json().get("detail") == "day.date liegt vor journey.start_date"
+    assert r3.json().get("detail") == "Datum liegt vor dem Startdatum der Reise"
 
     # Negativ: date nach journey.end_date
     r4 = client.put(f"/api/v1/days/{created_day['id']}", json={"date": "2026-07-10"})
     assert r4.status_code == 400
-    assert r4.json().get("detail") == "day.date liegt nach journey.end_date"
+    assert r4.json().get("detail") == "Datum liegt hinter dem Enddatum der Reise"
 
 
 def test_update_day_unknown_day_returns_404(client):
     r = client.put("/api/v1/days/999999", json={"title": "Neu"})
     assert r.status_code == 404
-    assert r.json().get("detail") == "Day nicht gefunden"
+    assert r.json().get("detail") == "Tag nicht gefunden"
 
 
 def test_delete_day_then_list_is_empty(client):
@@ -122,4 +122,4 @@ def test_delete_day_then_list_is_empty(client):
 def test_delete_day_unknown_returns_404(client):
     d = client.delete("/api/v1/days/999999")
     assert d.status_code == 404
-    assert d.json().get("detail") == "Day nicht gefunden"
+    assert d.json().get("detail") == "Tag nicht gefunden"

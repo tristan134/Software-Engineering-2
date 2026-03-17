@@ -70,7 +70,7 @@ def test_create_journey_end_date_before_start_date_returns_400(client):
         end_date="2026-07-01",
     )
     assert r.status_code == 400
-    assert r.json().get("detail") == "end_date darf nicht vor start_date liegen"
+    assert r.json().get("detail") == "Enddatum darf nicht vor dem Startdatum liegen"
 
 
 def test_create_journey_missing_title_returns_422(client):
@@ -101,14 +101,14 @@ def test_create_journey_strips_title_and_defaults_description_to_empty_string(cl
 def test_update_journey_unknown_id_returns_404(client):
     r = client.put("/api/v1/journey/999999", json={"title": "X"})
     assert r.status_code == 404
-    assert r.json().get("detail") == "Journey nicht gefunden"
+    assert r.json().get("detail") == "Reise nicht gefunden"
 
 
 def test_update_journey_rejects_whitespace_title_returns_400(client):
     created = _create_journey(client, title="Trip").json()
     r = client.put(f"/api/v1/journey/{created['id']}", json={"title": "   "})
     assert r.status_code == 400
-    assert r.json().get("detail") == "title darf nicht leer sein"
+    assert r.json().get("detail") == "Titel darf nicht leer sein"
 
 
 def test_update_journey_partial_update_and_date_validation(client):
@@ -132,7 +132,7 @@ def test_update_journey_partial_update_and_date_validation(client):
         json={"start_date": "2026-08-01"},
     )
     assert r2.status_code == 400
-    assert r2.json().get("detail") == "end_date darf nicht vor start_date liegen"
+    assert r2.json().get("detail") == "Enddatum darf nicht vor dem Startdatum liegen"
 
 
 def test_delete_journey_then_get_returns_404(client):
