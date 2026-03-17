@@ -1,3 +1,5 @@
+import "../css/newJourney.css";
+
 export function renderNewJourney({ mount }) {
 	mount.innerHTML = `
     <section class="landing">
@@ -66,8 +68,46 @@ export function renderNewJourney({ mount }) {
 	const daysList = mount.querySelector("#daysList");
 	const daysStatus = mount.querySelector("#daysStatus");
 
+	const startDateEl = form.querySelector("#start_date");
+	const endDateEl = form.querySelector("#end_date");
+
 	let journeyId = null;
 	let dayCounter = 0;
+	// Merkt alle bereits belegten Tages-Daten dieser Reise (YYYY-MM-DD)
+	const usedDayDates = new Set();
+
+	function normalizeDayDate(value) {
+		return (value || "").toString().trim();
+	}
+
+	function isDuplicateDayDate({ date, currentDayId }) {
+		const d = normalizeDayDate(date);
+		if (!d) return false;
+		for (const entry of usedDayDates) {
+			const [ed, eid] = entry.split("|");
+			if (ed !== d) continue;
+			if (currentDayId && eid && Number(eid) === Number(currentDayId)) continue;
+			return true;
+		}
+		return false;
+	}
+
+	function registerUsedDate({ date, dayId }) {
+		const d = normalizeDayDate(date);
+		if (!d) return;
+		if (dayId) {
+			usedDayDates.add(`${d}|${Number(dayId)}`);
+		} else {
+			usedDayDates.add(d);
+		}
+	}
+
+	function unregisterUsedDate({ date, dayId }) {
+		const d = normalizeDayDate(date);
+		if (!d) return;
+		if (dayId) usedDayDates.delete(`${d}|${Number(dayId)}`);
+		usedDayDates.delete(d);
+	}
 
 	function setStatus(el, text, type) {
 		el.textContent = text || "";
@@ -87,6 +127,29 @@ export function renderNewJourney({ mount }) {
 		return t ? String(t).slice(0, 5) : "";
 	}
 
+	function parseDateInputValueToUtcMidnight(value) {
+		// input[type=date] liefert YYYY-MM-DD ohne Zeitzone.
+		// Wir parsen explizit als UTC-Mitternacht, damit Offsets stabil bleiben.
+		if (!value || typeof value !== "string") return null;
+		const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+		if (!m) return null;
+		const year = Number(m[1]);
+		const month = Number(m[2]);
+		const day = Number(m[3]);
+		if (!year || !month || !day) return null;
+		return new Date(Date.UTC(year, month - 1, day));
+	}
+
+	function computeDayNumber({ journeyStart, dayDate }) {
+		const start = parseDateInputValueToUtcMidnight(journeyStart);
+		const d = parseDateInputValueToUtcMidnight(dayDate);
+		if (!start || !d) return null;
+
+		const diffMs = d.getTime() - start.getTime();
+		const diffDays = Math.round(diffMs / (24 * 60 * 60 * 1000));
+		return diffDays + 1; // Startdatum = Tag 1
+	}
+
 	function ensureJourneySaved() {
 		if (!journeyId) {
 			setStatus(daysStatus, "Bitte zuerst die Reise speichern.", "error");
@@ -95,15 +158,15 @@ export function renderNewJourney({ mount }) {
 		return true;
 	}
 
-	function dayTemplate({ localId, index }) {
+	function dayTemplate({ localId }) {
 		return `
       <div class="card" data-day-card="${localId}" style="padding: 14px;">
         <div class="actions mb-md">
-          <div class="card-title">Tag ${index}</div>
+          <div class="card-title" data-day-title="${localId}">Tag (noch nicht gespeichert)</div>
           <div class="actions-right">
           <button class="btn btn-secondary btn-sm" type="button" data-edit-day="${localId}">Bearbeiten</button>
           <button class="btn btn-secondary btn-sm" type="button" data-delete-day="${localId}">Löschen</button>
-          <button class="btn btn-secondary" type="button" data-add-activity="${localId}">+ Aktivität</button>
+          <button class="btn btn-secondary btn-sm" type="button" data-add-activity="${localId}">+ Aktivität</button>
         </div>
         </div>
 
@@ -147,7 +210,10 @@ export function renderNewJourney({ mount }) {
 
           <div class="actions">
             <div class="form-status" data-activity-status="${localId}"></div>
-            <button class="btn btn-accent" type="submit">Aktivität speichern</button>
+            <div class="flex gap-md">
+              <button class="btn btn-secondary" type="button" data-cancel-activity="${localId}">Abbrechen</button>
+              <button class="btn btn-accent" type="submit">Aktivität speichern</button>
+            </div>
           </div>
         </form>
 
@@ -220,6 +286,9 @@ export function renderNewJourney({ mount }) {
 		const actStatusEl = dayCardEl.querySelector(
 			`[data-activity-status="${localId}"]`,
 		);
+		const cancelActivityBtn = dayCardEl.querySelector(
+			`[data-cancel-activity="${localId}"]`,
+		);
 		const activitiesListEl = dayCardEl.querySelector(
 			`[data-activities-list="${localId}"]`,
 		);
@@ -237,6 +306,50 @@ export function renderNewJourney({ mount }) {
 		let activities = [];
 		let editingActivityId = null;
 		let isEditingDay = false;
+		let lastSavedDate = null;
+
+		function setActivityDeleteDisabled(activityId, disabled) {
+			const btn = activitiesListEl.querySelector(
+				`[data-delete-activity="${activityId}"]`,
+			);
+			if (!btn) return;
+			btn.disabled = Boolean(disabled);
+			btn.classList.toggle("is-disabled", Boolean(disabled));
+			btn.title = disabled
+				? "Während dem Bearbeiten kann die Aktivität nicht gelöscht werden. Bitte erst speichern."
+				: "";
+		}
+
+		function updateDayTitleFromDate() {
+			if (!dayTitleEl) return;
+			const dayDate = dayForm.querySelector("[name='date']")?.value;
+			const start = startDateEl?.value;
+			const end = endDateEl?.value;
+
+			const dayNumber = computeDayNumber({ journeyStart: start, dayDate });
+			if (dayNumber == null) {
+				dayTitleEl.textContent = "Tag";
+				return;
+			}
+
+			dayTitleEl.textContent = `Tag ${dayNumber}`;
+
+			// Optional: Range-Hinweis, falls Datum außerhalb der Reise liegt.
+			const endDate = parseDateInputValueToUtcMidnight(end);
+			const dayDateUtc = parseDateInputValueToUtcMidnight(dayDate);
+			const startUtc = parseDateInputValueToUtcMidnight(start);
+			if (
+				startUtc &&
+				dayDateUtc &&
+				(dayDateUtc < startUtc || (endDate && dayDateUtc > endDate))
+			) {
+				setStatus(
+					dayStatusEl,
+					`Hinweis: Das Datum liegt außerhalb des Reisezeitraums (${start || "?"}–${end || "?"}).`,
+					"error",
+				);
+			}
+		}
 
 		deleteDayBtn.addEventListener("click", async () => {
 			// Wenn Tag noch nicht gespeichert: einfach Card entfernen
@@ -273,6 +386,8 @@ export function renderNewJourney({ mount }) {
 					return;
 				}
 
+				// Datum aus Set entfernen
+				unregisterUsedDate({ date: lastSavedDate, dayId: savedDayId });
 				// UI entfernen
 				dayCardEl.remove();
 			} catch (err) {
@@ -313,6 +428,21 @@ export function renderNewJourney({ mount }) {
 			);
 		});
 
+		function cancelActivityEdit() {
+			// Edit-Mode sauber beenden
+			if (editingActivityId) {
+				setActivityDeleteDisabled(editingActivityId, false);
+				editingActivityId = null;
+			}
+			setStatus(actStatusEl, "", "");
+			activityForm.reset();
+			activityForm.style.display = "none";
+		}
+
+		cancelActivityBtn?.addEventListener("click", () => {
+			cancelActivityEdit();
+		});
+
 		activitiesListEl.addEventListener("click", async (e) => {
 			const delBtn = e.target.closest("[data-delete-activity]");
 			const editBtn = e.target.closest("[data-edit-activity]");
@@ -321,6 +451,16 @@ export function renderNewJourney({ mount }) {
 			if (delBtn) {
 				const activityId = Number(delBtn.getAttribute("data-delete-activity"));
 				if (!activityId) return;
+
+				// Wenn gerade diese Aktivität bearbeitet wird: Löschen verhindern
+				if (editingActivityId === activityId) {
+					setStatus(
+						actStatusEl,
+						"Diese Aktivität wird gerade bearbeitet. Bitte erst speichern, dann löschen.",
+						"error",
+					);
+					return;
+				}
 
 				if (!confirm("Aktivität wirklich löschen?")) return;
 
@@ -364,7 +504,13 @@ export function renderNewJourney({ mount }) {
 				const act = activities.find((x) => x.id === activityId);
 				if (!act) return;
 
+				// Falls bereits eine andere Aktivität im Edit ist, deren Delete wieder aktivieren
+				if (editingActivityId && editingActivityId !== activityId) {
+					setActivityDeleteDisabled(editingActivityId, false);
+				}
+
 				editingActivityId = activityId;
+				setActivityDeleteDisabled(activityId, true);
 				activityForm.style.display = "block";
 
 				activityForm.querySelector("[name='title']").value = act.title || "";
@@ -390,6 +536,9 @@ export function renderNewJourney({ mount }) {
 			}
 			activityForm.style.display =
 				activityForm.style.display === "none" ? "block" : "none";
+			if (activityForm.style.display === "none") {
+				cancelActivityEdit();
+			}
 		});
 
 		dayForm.addEventListener("submit", async (e) => {
@@ -397,15 +546,27 @@ export function renderNewJourney({ mount }) {
 			if (!ensureJourneySaved()) return;
 
 			const fd = new FormData(dayForm);
+			const nextDate = normalizeDayDate(fd.get("date"));
+
+			// Duplicate-Check VOR Request
+			if (isDuplicateDayDate({ date: nextDate, currentDayId: savedDayId })) {
+				setStatus(
+					dayStatusEl,
+					"Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
+					"error",
+				);
+				return;
+			}
+
 			const payloadCreate = {
 				journey_id: journeyId,
 				title: (fd.get("title") || "").toString(),
-				date: (fd.get("date") || "").toString(),
+				date: nextDate,
 			};
 
 			const payloadUpdate = {
 				title: (fd.get("title") || "").toString(),
-				date: (fd.get("date") || "").toString(),
+				date: nextDate,
 			};
 
 			const isUpdate = Boolean(savedDayId);
@@ -446,6 +607,13 @@ export function renderNewJourney({ mount }) {
 				// Bei Create: ID merken
 				if (!savedDayId) savedDayId = data.id;
 
+				// usedDayDates aktualisieren
+				if (lastSavedDate && lastSavedDate !== normalizeDayDate(data?.date)) {
+					unregisterUsedDate({ date: lastSavedDate, dayId: savedDayId });
+				}
+				lastSavedDate = normalizeDayDate(data?.date || nextDate);
+				registerUsedDate({ date: lastSavedDate, dayId: savedDayId });
+
 				// Nach Save: wieder sperren
 				dayForm.querySelectorAll("input").forEach((i) => {
 					i.disabled = true;
@@ -457,8 +625,8 @@ export function renderNewJourney({ mount }) {
 
 				isEditingDay = false;
 
-				// Optional: Titelanzeige hübsch aktualisieren
-				if (dayTitleEl) dayTitleEl.textContent = `Tag ${localId}`;
+				// Tag-Nummer jetzt aus Datum ableiten (Datum ist erst nach Save relevant)
+				updateDayTitleFromDate();
 
 				setStatus(
 					dayStatusEl,
@@ -466,8 +634,8 @@ export function renderNewJourney({ mount }) {
 					"success",
 				);
 
-				// Activity-Form bleibt wie bei dir: erst nach Save sinnvoll
 				activityForm.style.display = "none";
+				cancelActivityEdit();
 			} catch (err) {
 				console.error(err);
 				setStatus(
@@ -536,6 +704,8 @@ export function renderNewJourney({ mount }) {
 					activities = activities.map((a) =>
 						a.id === editingActivityId ? data : a,
 					);
+					// Delete wieder erlauben
+					setActivityDeleteDisabled(editingActivityId, false);
 					editingActivityId = null;
 					setStatus(actStatusEl, "Aktivität aktualisiert!", "success");
 				} else {
@@ -546,6 +716,7 @@ export function renderNewJourney({ mount }) {
 				renderActivities(activitiesListEl, activities);
 				activityForm.reset();
 				activityForm.style.display = "none";
+				cancelActivityEdit();
 			} catch (err) {
 				console.error(err);
 				setStatus(
@@ -627,7 +798,7 @@ export function renderNewJourney({ mount }) {
 		const localId = String(dayCounter);
 
 		const wrapper = document.createElement("div");
-		wrapper.innerHTML = dayTemplate({ localId, index: dayCounter });
+		wrapper.innerHTML = dayTemplate({ localId });
 		const dayCardEl = wrapper.firstElementChild;
 
 		daysList.appendChild(dayCardEl);

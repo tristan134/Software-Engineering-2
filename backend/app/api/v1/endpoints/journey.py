@@ -68,11 +68,14 @@ def create_journey(payload: JourneyCreate, db: Session = Depends(get_db)):
 def update_journey(
     journey_id: int,
     payload: schemas.JourneyUpdate,
+    shift_days: bool = False,
     db: Session = Depends(get_db),
 ):
     journey = db.get(models.Journey, journey_id)
     if not journey:
         raise HTTPException(status_code=404, detail="Reise nicht gefunden")
+
+    old_start_date = journey.start_date
 
     if payload.title is not None:
         t = payload.title.strip()
@@ -100,6 +103,22 @@ def update_journey(
 
     if payload.description is not None:
         journey.description = payload.description or ""
+
+    # Optional: alle Tage relativ zum Startdatum mitverschieben
+    if shift_days and payload.start_date is not None and old_start_date is not None:
+        delta = payload.start_date - old_start_date
+        for d in journey.days:
+            d.date = d.date + delta
+
+    # Validierung: liegen die (ggf. verschobenen) Tage im neuen Zeitraum?
+    # Gilt auch beim reinen Verkürzen/Ändern von start/end ohne shift_days.
+    if journey.start_date and journey.end_date:
+        for d in journey.days:
+            if d.date < journey.start_date or d.date > journey.end_date:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Durch das Verschieben liegen mindestens ein Tag außerhalb des neuen Reisezeitraums. Bitte die entsprechenden Tage zuerst löschen.",
+                )
 
     db.commit()
     db.refresh(journey)

@@ -15,3 +15,45 @@
 .landing p {
 	margin-top: 0;
 }
+
+.activity-item {
+	padding: 12px 14px;
+	width: 100%;
+	max-width: 100%;
+}
+
+.activity-item .activity-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+/* Titel soll wachsen dürfen und sauber umbrechen */
+.activity-item .activity-title {
+	min-width: 0;
+	font-weight: 700;
+	line-height: 1.25;
+	overflow-wrap: anywhere;
+}
+
+/* Zeit und Buttons sauber rechts ausrichten */
+.activity-item .activity-right {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	justify-content: flex-end;
+	min-width: 0;
+}
+
+.activity-item .activity-time {
+	color: var(--color-text-muted);
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+/* Buttons nicht quetschen */
+.activity-item .btn {
+	flex: 0 0 auto;
+	white-space: nowrap;
+}

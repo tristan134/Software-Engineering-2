@@ -30,6 +30,20 @@ def test_create_day_happy_path_strips_title(client):
     assert created["date"] == "2026-07-01"
 
 
+def test_create_day_duplicate_date_in_same_journey_returns_400(client):
+    journey = _create_journey(client)
+
+    r1 = _create_day(client, journey["id"], date="2026-07-01")
+    assert r1.status_code == 201, r1.text
+
+    r2 = _create_day(client, journey["id"], title="Tag 2", date="2026-07-01")
+    assert r2.status_code == 400, r2.text
+    assert (
+        r2.json().get("detail")
+        == "Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden."
+    )
+
+
 def test_create_day_requires_existing_journey_returns_404(client):
     r = _create_day(client, 999999)
     assert r.status_code == 404
@@ -99,6 +113,26 @@ def test_update_day_happy_path_and_date_validation(client):
     r4 = client.put(f"/api/v1/days/{created_day['id']}", json={"date": "2026-07-10"})
     assert r4.status_code == 400
     assert r4.json().get("detail") == "Datum liegt hinter dem Enddatum der Reise"
+
+
+def test_update_day_duplicate_date_in_same_journey_returns_400(client):
+    journey = _create_journey(client, start_date="2026-07-01", end_date="2026-07-10")
+
+    _create_day(client, journey["id"], title="Tag 1", date="2026-07-01")
+    d2 = _create_day(client, journey["id"], title="Tag 2", date="2026-07-02").json()
+
+    # Versuch: zweiten Tag auf Datum des ersten setzen
+    r = client.put(f"/api/v1/days/{d2['id']}", json={"date": "2026-07-01"})
+    assert r.status_code == 400, r.text
+    assert (
+        r.json().get("detail")
+        == "Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden."
+    )
+
+    # Kontrolle: wenn man das eigene Datum erneut setzt, ist es ok
+    r_ok = client.put(f"/api/v1/days/{d2['id']}", json={"date": "2026-07-02"})
+    assert r_ok.status_code == 200, r_ok.text
+    assert r_ok.json()["date"] == "2026-07-02"
 
 
 def test_update_day_unknown_day_returns_404(client):
