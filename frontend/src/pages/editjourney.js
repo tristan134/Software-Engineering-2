@@ -31,12 +31,12 @@ export function renderEditJourney({ mount }) {
         <div class="flex gap-md mb-md" style="flex-wrap: wrap;">
           <div class="form-group" style="flex:1; min-width: 220px;">
             <label class="label" for="start_date">Startdatum</label>
-            <input id="start_date" name="start_date" type="date" required class="input" />
+            <input id="start_date" name="start_date" type="date" required class="input" disabled/>
           </div>
 
           <div class="form-group" style="flex:1; min-width: 220px;">
             <label class="label" for="end_date">Enddatum</label>
-            <input id="end_date" name="end_date" type="date" required class="input" />
+            <input id="end_date" name="end_date" type="date" required class="input" disabled/>
           </div>
         </div>
 
@@ -206,8 +206,8 @@ export function renderEditJourney({ mount }) {
 
           <div class="flex gap-md mb-md" style="flex-wrap: wrap;">
             <div class="form-group" style="flex:1; min-width: 160px;">
-              <label class="label">Start (optional)</label>
-              <input name="start_time" type="time" class="input" />
+              <label class="label">Start</label>
+              <input name="start_time" type="time" class="input" required/>
             </div>
             <div class="form-group" style="flex:1; min-width: 160px;">
               <label class="label">Ende (optional)</label>
@@ -249,12 +249,9 @@ export function renderEditJourney({ mount }) {
       <div class="flex flex-column" style="gap: 10px;">
         ${acts
 					.map((a) => {
-						const timeText =
-							a.start_time || a.end_time
-								? `${fmtTime(a.start_time)}${
-										a.end_time ? ` Uhr – ${fmtTime(a.end_time)} Uhr` : ""
-									}`
-								: "ohne Uhrzeit";
+						const timeText = `${fmtTime(a.start_time)} Uhr${
+							a.end_time ? ` – ${fmtTime(a.end_time)} Uhr` : ""
+						}`;
 
 						return `
             <div class="card activity-item" data-activity-id="${a.id}">
