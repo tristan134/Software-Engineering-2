@@ -76,7 +76,6 @@ export function renderEditJourney({ mount }) {
 	const startDateEl = form.querySelector("#start_date");
 	const endDateEl = form.querySelector("#end_date");
 
-	let initialJourneyStartDate = null;
 	// Merkt alle bereits belegten Tages-Daten dieser Reise (YYYY-MM-DD)
 	const usedDayDates = new Set();
 
@@ -166,6 +165,14 @@ export function renderEditJourney({ mount }) {
 		const diffMs = d.getTime() - start.getTime();
 		const diffDays = Math.round(diffMs / (24 * 60 * 60 * 1000));
 		return diffDays + 1; // Startdatum = Tag 1
+	}
+
+	function isDayDateWithinJourneyRange(dayDateStr) {
+		const dayUtc = parseDateInputValueToUtcMidnight(dayDateStr);
+		const startUtc = parseDateInputValueToUtcMidnight(startDateEl?.value);
+		const endUtc = parseDateInputValueToUtcMidnight(endDateEl?.value);
+		if (!dayUtc || !startUtc || !endUtc) return true; // wenn wir es nicht sicher wissen, blockieren wir nicht
+		return dayUtc >= startUtc && dayUtc <= endUtc;
 	}
 
 	function dayTemplate({ localId }) {
@@ -350,18 +357,11 @@ export function renderEditJourney({ mount }) {
 
 			dayTitleEl.textContent = `Tag ${dayNumber}`;
 
-			// Optional: Range-Hinweis, falls Datum außerhalb der Reise liegt.
-			const endDate = parseDateInputValueToUtcMidnight(end);
-			const dayDateUtc = parseDateInputValueToUtcMidnight(dayDate);
-			const startUtc = parseDateInputValueToUtcMidnight(start);
-			if (
-				startUtc &&
-				dayDateUtc &&
-				(dayDateUtc < startUtc || (endDate && dayDateUtc > endDate))
-			) {
+			// Range-Validierung: Datum muss innerhalb der Reise liegen.
+			if (dayDate && !isDayDateWithinJourneyRange(dayDate)) {
 				setStatus(
 					dayStatusEl,
-					`Hinweis: Das Datum liegt außerhalb des Reisezeitraums (${start || "?"}–${end || "?"}).`,
+					`Das Datum muss innerhalb des Reisezeitraums liegen (${start || "?"}–${end || "?"}).`,
 					"error",
 				);
 			}
@@ -554,6 +554,16 @@ export function renderEditJourney({ mount }) {
 			const fd = new FormData(dayForm);
 			const nextDate = normalizeDayDate(fd.get("date"));
 
+			// Zeitraum-Check VOR Request
+			if (nextDate && !isDayDateWithinJourneyRange(nextDate)) {
+				setStatus(
+					dayStatusEl,
+					`Bitte ein Datum innerhalb des Reisezeitraums wählen (${startDateEl?.value || "?"}–${endDateEl?.value || "?"}).`,
+					"error",
+				);
+				return;
+			}
+
 			// Duplicate-Check VOR Request
 			if (isDuplicateDayDate({ date: nextDate, currentDayId: savedDayId })) {
 				setStatus(
@@ -725,38 +735,22 @@ export function renderEditJourney({ mount }) {
 		e.preventDefault();
 		setStatus(journeyStatus, "Speichere Änderungen…", "loading");
 
-		// Fallback: falls initialJourneyStartDate aus irgendeinem Grund nicht gesetzt wurde,
-		// nehmen wir den aktuellen (bisherigen) Wert aus dem Input als "initial".
-		if (!initialJourneyStartDate) {
-			initialJourneyStartDate = startDateEl?.value || null;
-		}
-
 		const fd = new FormData(form);
-		const nextStartDate = (fd.get("start_date") || "").toString() || null;
-
-		const shiftDays = Boolean(
-			nextStartDate &&
-				initialJourneyStartDate &&
-				nextStartDate !== initialJourneyStartDate,
-		);
 
 		const payload = {
 			title: (fd.get("title") || "").toString(),
 			price: (fd.get("price") || "").toString() || null,
-			start_date: nextStartDate,
+			start_date: (fd.get("start_date") || "").toString() || null,
 			end_date: (fd.get("end_date") || "").toString() || null,
 			description: (fd.get("description") || "").toString() || "",
 		};
 
 		try {
-			const res = await fetch(
-				`${API}/journey/${journeyId}${shiftDays ? "?shift_days=true" : ""}`,
-				{
-					method: "PUT",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(payload),
-				},
-			);
+			const res = await fetch(`${API}/journey/${journeyId}`, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			});
 
 			const data = await res.json().catch(() => ({}));
 			if (!res.ok) {
@@ -768,37 +762,7 @@ export function renderEditJourney({ mount }) {
 				return;
 			}
 
-			// Nach erfolgreichem Save: Startdatum-Marker aktualisieren
-			initialJourneyStartDate = data.start_date || payload.start_date;
-
 			setStatus(journeyStatus, "Änderungen gespeichert!", "success");
-
-			// UI auffrischen, falls Days verschoben wurden (Titel/Offsets)
-			if (shiftDays) {
-				setStatus(daysStatus, "Lade Tage…", "loading");
-				const dRes = await fetch(`${API}/days/by-journey/${journeyId}`);
-				const days = await dRes.json().catch(() => []);
-				if (dRes.ok) {
-					daysList.innerHTML = "";
-					for (const d of days) {
-						const localId = `day-${d.id}`;
-						const wrapper = document.createElement("div");
-						wrapper.innerHTML = dayTemplate({ localId });
-						const dayCardEl = wrapper.firstElementChild;
-						daysList.appendChild(dayCardEl);
-						const activities = await loadActivities(d.id);
-						wireDayCard(dayCardEl, d, activities);
-					}
-					rebuildUsedDatesFromDays(days);
-					setStatus(daysStatus, "", "");
-				} else {
-					setStatus(
-						daysStatus,
-						"Tage konnten nicht neu geladen werden.",
-						"error",
-					);
-				}
-			}
 		} catch (err) {
 			console.error(err);
 			setStatus(
@@ -852,8 +816,6 @@ export function renderEditJourney({ mount }) {
 			form.querySelector("[name='end_date']").value = journey.end_date || "";
 			form.querySelector("[name='description']").value =
 				journey.description || "";
-			// Startdatum merken, um später festzustellen ob verschoben wurde
-			initialJourneyStartDate = journey.start_date || null;
 
 			setStatus(journeyStatus, "", "");
 
