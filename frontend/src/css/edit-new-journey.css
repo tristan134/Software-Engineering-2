@@ -1,0 +1,124 @@
+.landing {
+	max-width: 820px;
+	margin: 0 auto;
+}
+
+.landing h1 {
+	font-size: 1.6rem;
+	margin: 0 0 var(--space-xs);
+	letter-spacing: 0.2px;
+}
+
+.landing p {
+	margin-top: 0;
+}
+
+.activity-item {
+	display: block;
+	width: 100%;
+	background: var(--color-activities-surface);
+	border-radius: 20px;
+	border: 1px solid var(--color-border);
+	box-shadow: var(--shadow-sm);
+	padding: var(--space-lg);
+	transition:
+		transform 0.15s ease,
+		box-shadow 0.15s ease;
+}
+
+.activity-item .activity-title,
+.activity-item .activity-time {
+	line-height: 1.4;
+}
+
+.activity-item .btn {
+	padding: 6px 12px;
+	font-size: 0.9rem;
+}
+
+.activity-item .activity-row {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	min-width: 0;
+	align-items: stretch;
+}
+
+.activity-item .activity-main {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.activity-item .activity-actions {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-end;
+	gap: 10px;
+	flex: 0 0 auto;
+	white-space: nowrap;
+}
+
+.activity-item .activity-title {
+	display: flex;
+	min-width: 0;
+	font-weight: 700;
+	overflow-wrap: anywhere;
+	flex: 1 1 auto;
+	margin-right: 0;
+}
+
+.activity-item .activity-time {
+	color: var(--color-primary-light);
+	font-weight: 600;
+	white-space: nowrap;
+	font-size: 1.05rem;
+	letter-spacing: 0.2px;
+	align-items: center;
+	flex: 0 0 auto;
+}
+
+.activity-item .btn {
+	flex: 0 0 auto;
+	white-space: nowrap;
+}
+
+.card[data-day-card] {
+	position: relative;
+	background: var(--color-surface);
+	box-shadow: var(--shadow-md);
+	outline: 1px solid
+		color-mix(in oklab, var(--color-border) 70%, var(--color-primary) 30%);
+	outline-offset: 0;
+	border-radius: 20px;
+}
+
+.card[data-day-card] .actions.mb-md {
+	padding-bottom: var(--space-sm);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.card[data-day-card] .card-title {
+	font-size: 1.1rem;
+	font-weight: 800;
+	letter-spacing: 0.2px;
+}
+
+.card[data-day-card] + .card[data-day-card] {
+	margin-top: var(--space-lg);
+}
+
+.card[data-day-card] [data-activities-list] {
+	border-top: 1px solid var(--color-border);
+	padding-top: var(--space-md);
+	margin-top: var(--space-md);
+}
+
+#addDayBtn {
+	display: block;
+	width: 100%;
+	margin-top: var(--space-lg);
+}
