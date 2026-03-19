@@ -34,6 +34,23 @@ function getJourneyDayNumber({ journeyStartDate, dayDate }) {
 	return delta + 1;
 }
 
+function formatPrice(p) {
+	if (p == null) return "-";
+	const num = Number(p);
+	if (Number.isNaN(num)) return p;
+	return `${num.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €`;
+}
+
+function formatDate(str) {
+	if (!str) return "-";
+	return new Date(str).toLocaleDateString();
+}
+
+function formatTime(timeStr) {
+	if (!timeStr) return null;
+	return timeStr.slice(0, 5);
+}
+
 export async function renderFullJourney({ mount }) {
 	const hash = window.location.hash;
 	const id = hash.split("/")[2];
@@ -143,10 +160,8 @@ function renderActivity(activity) {
 	const end = formatTime(activity.end_time);
 
 	let timeDisplay = "-";
-	if (start && end) timeDisplay = `${start} – ${end}`;
-	else if (start) timeDisplay = start;
-
-	const files = Array.isArray(activity.files) ? activity.files : [];
+	if (start && end) timeDisplay = `${start} Uhr – ${end} Uhr`;
+	else if (start) timeDisplay = `${start} Uhr`;
 
 	return `
     <div class="activity-timeline-item">
@@ -157,40 +172,7 @@ function renderActivity(activity) {
         <div class="activity-card">
             <p class="activity-title">${activity.title}</p>
             <p class="activity-time">${timeDisplay}</p>
-
-            <h5 class="activity-files-title">Dateien</h5>
-
-            ${
-							files.length === 0
-								? `<p class="text-muted">Keine Dateien vorhanden.</p>`
-								: files.map(renderFile).join("")
-						}
         </div>
     </div>
     `;
-}
-
-function renderFile(file) {
-	return `
-    <div class="activity-file">
-        <a href="${file.file_url}" target="_blank">${file.file_name}</a>
-    </div>
-    `;
-}
-
-function formatPrice(p) {
-	if (p == null) return "-";
-	const num = Number(p);
-	if (Number.isNaN(num)) return p;
-	return `${num.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €`;
-}
-
-function formatDate(str) {
-	if (!str) return "-";
-	return new Date(str).toLocaleDateString();
-}
-
-function formatTime(timeStr) {
-	if (!timeStr) return null;
-	return timeStr.slice(0, 5);
 }
