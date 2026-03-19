@@ -328,6 +328,11 @@
 	align-items: center;
 }
 
+.flex.flex-column {
+	width: 100%;
+	gap: 20px;
+}
+
 /* =========================
    Alerts / Messages
    ========================= */

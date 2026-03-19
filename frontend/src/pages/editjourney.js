@@ -1,5 +1,5 @@
-import "../css/newJourney.css";
 import { API_BASE } from "../apiBase";
+import "../css/edit-new-journey.css";
 
 export function renderEditJourney({ mount }) {
 	const API = `${API_BASE}/v1`;
@@ -58,11 +58,11 @@ export function renderEditJourney({ mount }) {
             <div class="card-header" style="margin:0;">Tage & Aktivitäten</div>
             <div class="text-muted">Füge Tage hinzu und plane deinen Ablauf.</div>
           </div>
-          <button class="btn btn-accent" id="addDayBtn" type="button">+ Tag</button>
         </div>
 
         <div id="daysStatus" class="form-status mb-md"></div>
         <div id="daysList" class="flex flex-column" style="gap: 12px;"></div>
+	    <button class="btn btn-accent" id="addDayBtn" type="button">+ Tag</button>
       </div>
     </section>
   `;
@@ -254,7 +254,7 @@ export function renderEditJourney({ mount }) {
 		}
 
 		listEl.innerHTML = `
-      <div class="flex flex-column" style="gap: 10px;">
+      <div class="flex flex-column">
         ${acts
 					.map((a) => {
 						const timeText = `${fmtTime(a.start_time)} Uhr${
@@ -262,17 +262,19 @@ export function renderEditJourney({ mount }) {
 						}`;
 
 						return `
-            <div class="card activity-item" data-activity-id="${a.id}">
-              <div class="activity-row">
-                <div class="activity-title">${escapeHtml(a.title)}</div>
-                <div class="activity-right">
-                  <div class="activity-time">${escapeHtml(timeText)}</div>
-                  <button class="btn btn-secondary btn-sm" type="button" data-edit-activity="${a.id}">Bearbeiten</button>
-                  <button class="btn btn-secondary btn-sm" type="button" data-delete-activity="${a.id}">Löschen</button>
-                </div>
-              </div>
-            </div>
-          `;
+  <div class="card activity-item" data-activity-id="${a.id}">
+    <div class="activity-row">
+      <div class="activity-main">
+        <div class="activity-title">${escapeHtml(a.title)}</div>
+        <div class="activity-time">${escapeHtml(timeText)}</div>
+      </div>
+      <div class="activity-actions">
+        <button class="btn btn-secondary btn-sm" type="button" data-edit-activity="${a.id}">Bearbeiten</button>
+        <button class="btn btn-secondary btn-sm" type="button" data-delete-activity="${a.id}">Löschen</button>
+      </div>
+    </div>
+  </div>
+`;
 					})
 					.join("")}
       </div>
