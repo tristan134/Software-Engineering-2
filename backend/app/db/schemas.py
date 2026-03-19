@@ -1,4 +1,4 @@
-from datetime import datetime, time, date
+from datetime import time, date
 import datetime as dt
 from pydantic import BaseModel, ConfigDict, field_serializer
 from typing import List, Optional
@@ -99,37 +99,5 @@ class ActivityUpdate(BaseModel):
 
 class Activity(ActivityBase):
     id: int
-    files: List["FileUpload"] = []
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-# ---------------------------------------------------------
-# FILE UPLOAD
-# ---------------------------------------------------------
-
-
-class FileUploadBase(BaseModel):
-    activity_id: int
-    file_name: str
-    file_url: str
-    file_type: Optional[str] = None
-    file_size: Optional[int] = None
-
-
-class FileUploadCreate(FileUploadBase):
-    pass
-
-
-class FileUploadUpdate(BaseModel):
-    file_name: Optional[str] = None
-    file_url: Optional[str] = None
-    file_type: Optional[str] = None
-    file_size: Optional[int] = None
-
-
-class FileUpload(FileUploadBase):
-    id: int
-    uploaded_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

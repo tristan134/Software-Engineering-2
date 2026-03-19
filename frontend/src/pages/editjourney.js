@@ -326,11 +326,6 @@ export function renderEditJourney({ mount }) {
 			? normalizeDayDate(initialDay.date)
 			: null;
 
-		// Wenn initialDay bereits existiert: Datum im Set registrieren
-		if (initialDay?.date && initialDay?.id) {
-			registerUsedDate({ date: initialDay.date, dayId: initialDay.id });
-		}
-
 		function setActivityDeleteDisabled(activityId, disabled) {
 			const btn = activitiesListEl.querySelector(
 				`[data-delete-activity="${activityId}"]`,

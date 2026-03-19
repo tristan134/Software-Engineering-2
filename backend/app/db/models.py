@@ -54,17 +54,3 @@ class Activity(Base):
     day_id: Mapped[int] = mapped_column(ForeignKey("days.id"), nullable=False)
 
     day: Mapped["Day"] = relationship(back_populates="activities")
-    files: Mapped[list["FileUpload"]] = relationship(
-        back_populates="activity", cascade="all, delete-orphan"
-    )
-
-
-class FileUpload(Base):
-    __tablename__ = "file_uploads"
-
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    activity_id: Mapped[int] = mapped_column(ForeignKey("activity.id"))
-    file_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    file_url: Mapped[str] = mapped_column(Text, nullable=False)
-
-    activity: Mapped["Activity"] = relationship(back_populates="files")
