@@ -1,7 +1,8 @@
 import "../css/newJourney.css";
+import { API_BASE } from "../apiBase";
 
 export function renderEditJourney({ mount }) {
-	const API = "http://localhost:8000/api/v1";
+	const API = `${API_BASE}/v1`;
 	const hash = window.location.hash;
 	const journeyId = Number(hash.split("/")[2]);
 

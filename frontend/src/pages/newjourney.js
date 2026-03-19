@@ -1,4 +1,5 @@
 import "../css/newJourney.css";
+import { apiUrl } from "../apiBase";
 
 export function renderNewJourney({ mount }) {
 	mount.innerHTML = `
@@ -369,12 +370,9 @@ export function renderNewJourney({ mount }) {
 			setStatus(dayStatusEl, "Lösche Tag…", "loading");
 
 			try {
-				const res = await fetch(
-					`http://localhost:8000/api/v1/days/${savedDayId}`,
-					{
-						method: "DELETE",
-					},
-				);
+				const res = await fetch(apiUrl(`/v1/days/${savedDayId}`), {
+					method: "DELETE",
+				});
 
 				if (!res.ok) {
 					const data = await res.json().catch(() => ({}));
@@ -467,12 +465,9 @@ export function renderNewJourney({ mount }) {
 				setStatus(actStatusEl, "Lösche Aktivität…", "loading");
 
 				try {
-					const res = await fetch(
-						`http://localhost:8000/api/v1/activities/${activityId}/`,
-						{
-							method: "DELETE",
-						},
-					);
+					const res = await fetch(apiUrl(`/v1/activities/${activityId}/`), {
+						method: "DELETE",
+					});
 
 					if (!res.ok) {
 						const data = await res.json().catch(() => ({}));
@@ -571,8 +566,8 @@ export function renderNewJourney({ mount }) {
 
 			const isUpdate = Boolean(savedDayId);
 			const url = isUpdate
-				? `http://localhost:8000/api/v1/days/${savedDayId}/`
-				: `http://localhost:8000/api/v1/days/`;
+				? apiUrl(`/v1/days/${savedDayId}/`)
+				: apiUrl("/v1/days/");
 
 			const method = isUpdate ? "PUT" : "POST";
 			const payload = isUpdate ? payloadUpdate : payloadCreate;
@@ -667,8 +662,8 @@ export function renderNewJourney({ mount }) {
 
 			const isEdit = Boolean(editingActivityId);
 			const url = isEdit
-				? `http://localhost:8000/api/v1/activities/${editingActivityId}/`
-				: `http://localhost:8000/api/v1/activities/`;
+				? apiUrl(`/v1/activities/${editingActivityId}/`)
+				: apiUrl("/v1/activities/");
 
 			const method = isEdit ? "PUT" : "POST";
 			const payload = isEdit ? payloadUpdate : payloadCreate;
@@ -746,7 +741,7 @@ export function renderNewJourney({ mount }) {
 		};
 
 		try {
-			const res = await fetch("http://localhost:8000/api/v1/journey/create", {
+			const res = await fetch(apiUrl("/v1/journey/create"), {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(payload),

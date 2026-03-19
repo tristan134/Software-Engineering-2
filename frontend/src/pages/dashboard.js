@@ -1,4 +1,5 @@
 import "../css/dashboard.css";
+import { apiUrl } from "../apiBase";
 
 export function renderDashboardPage({ mount }) {
 	mount.innerHTML = `
@@ -15,7 +16,7 @@ async function loadJourneys() {
 	const container = document.getElementById("journeys");
 
 	try {
-		const res = await fetch("http://localhost:8000/api/v1/journey");
+		const res = await fetch(apiUrl("/v1/journey"));
 		const journeys = await res.json();
 
 		// Wenn KEINE Reisen existieren → Hinweistext anzeigen
@@ -81,7 +82,7 @@ async function deleteJourney(id) {
 	}
 
 	try {
-		await fetch(`http://localhost:8000/api/v1/journey/${id}`, {
+		await fetch(apiUrl(`/v1/journey/${id}`), {
 			method: "DELETE",
 		});
 
