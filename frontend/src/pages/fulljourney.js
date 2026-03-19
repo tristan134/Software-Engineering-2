@@ -157,23 +157,7 @@ function renderActivity(activity) {
         <div class="activity-card">
             <p class="activity-title">${activity.title}</p>
             <p class="activity-time">${timeDisplay}</p>
-
-            <h5 class="activity-files-title">Dateien</h5>
-
-            ${
-							files.length === 0
-								? `<p class="text-muted">Keine Dateien vorhanden.</p>`
-								: files.map(renderFile).join("")
-						}
         </div>
-    </div>
-    `;
-}
-
-function renderFile(file) {
-	return `
-    <div class="activity-file">
-        <a href="${file.file_url}" target="_blank">${file.file_name}</a>
     </div>
     `;
 }
