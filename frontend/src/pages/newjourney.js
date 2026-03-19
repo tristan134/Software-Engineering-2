@@ -81,18 +81,6 @@ export function renderNewJourney({ mount }) {
 		return (value || "").toString().trim();
 	}
 
-	function isDuplicateDayDate({ date, currentDayId }) {
-		const d = normalizeDayDate(date);
-		if (!d) return false;
-		for (const entry of usedDayDates) {
-			const [ed, eid] = entry.split("|");
-			if (ed !== d) continue;
-			if (currentDayId && eid && Number(eid) === Number(currentDayId)) continue;
-			return true;
-		}
-		return false;
-	}
-
 	function registerUsedDate({ date, dayId }) {
 		const d = normalizeDayDate(date);
 		if (!d) return;
@@ -542,16 +530,6 @@ export function renderNewJourney({ mount }) {
 
 			const fd = new FormData(dayForm);
 			const nextDate = normalizeDayDate(fd.get("date"));
-
-			// Duplicate-Check VOR Request
-			if (isDuplicateDayDate({ date: nextDate, currentDayId: savedDayId })) {
-				setStatus(
-					dayStatusEl,
-					"Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
-					"error",
-				);
-				return;
-			}
 
 			const payloadCreate = {
 				journey_id: journeyId,

@@ -1,8 +1,7 @@
 import "../css/newJourney.css";
-import { API_BASE } from "../apiBase";
+import { apiUrl } from "../apiBase";
 
 export function renderEditJourney({ mount }) {
-	const API = `${API_BASE}/v1`;
 	const hash = window.location.hash;
 	const journeyId = Number(hash.split("/")[2]);
 
@@ -84,22 +83,6 @@ export function renderEditJourney({ mount }) {
 		return (value || "").toString().trim();
 	}
 
-	function isDuplicateDayDate({ date, currentDayId }) {
-		const d = normalizeDayDate(date);
-		if (!d) return false;
-		for (const entry of usedDayDates) {
-			// entry-Formate:
-			// - "YYYY-MM-DD" (unsaved/unknown)
-			// - "YYYY-MM-DD|<id>" (saved)
-			const [ed, eid] = entry.split("|");
-			if (ed !== d) continue;
-			if (currentDayId && eid && Number(eid) === Number(currentDayId)) continue;
-			// Gleicher Tag oder anderer Day hat bereits dieses Datum
-			return true;
-		}
-		return false;
-	}
-
 	function registerUsedDate({ date, dayId }) {
 		const d = normalizeDayDate(date);
 		if (!d) return;
@@ -166,14 +149,6 @@ export function renderEditJourney({ mount }) {
 		const diffMs = d.getTime() - start.getTime();
 		const diffDays = Math.round(diffMs / (24 * 60 * 60 * 1000));
 		return diffDays + 1; // Startdatum = Tag 1
-	}
-
-	function isDayDateWithinJourneyRange(dayDateStr) {
-		const dayUtc = parseDateInputValueToUtcMidnight(dayDateStr);
-		const startUtc = parseDateInputValueToUtcMidnight(startDateEl?.value);
-		const endUtc = parseDateInputValueToUtcMidnight(endDateEl?.value);
-		if (!dayUtc || !startUtc || !endUtc) return true; // wenn wir es nicht sicher wissen, blockieren wir nicht
-		return dayUtc >= startUtc && dayUtc <= endUtc;
 	}
 
 	function dayTemplate({ localId }) {
@@ -280,7 +255,7 @@ export function renderEditJourney({ mount }) {
 	}
 
 	async function loadActivities(dayId) {
-		const res = await fetch(`${API}/activities/by-day/${dayId}`);
+		const res = await fetch(apiUrl(`/v1/activities/by-day/${dayId}`));
 		if (!res.ok) return [];
 		return await res.json().catch(() => []);
 	}
@@ -343,7 +318,6 @@ export function renderEditJourney({ mount }) {
 			if (!dayTitleEl) return;
 			const dayDate = dayForm.querySelector("[name='date']")?.value;
 			const start = startDateEl?.value;
-			const end = endDateEl?.value;
 
 			const dayNumber = computeDayNumber({ journeyStart: start, dayDate });
 			if (dayNumber == null) {
@@ -352,15 +326,6 @@ export function renderEditJourney({ mount }) {
 			}
 
 			dayTitleEl.textContent = `Tag ${dayNumber}`;
-
-			// Range-Validierung: Datum muss innerhalb der Reise liegen.
-			if (dayDate && !isDayDateWithinJourneyRange(dayDate)) {
-				setStatus(
-					dayStatusEl,
-					`Das Datum muss innerhalb des Reisezeitraums liegen (${start || "?"}–${end || "?"}).`,
-					"error",
-				);
-			}
 		}
 
 		// Prefill day
@@ -392,7 +357,7 @@ export function renderEditJourney({ mount }) {
 
 			setStatus(dayStatusEl, "Lösche Tag…", "loading");
 			try {
-				const res = await fetch(`${API}/days/${savedDayId}`, {
+				const res = await fetch(apiUrl(`/v1/days/${savedDayId}`), {
 					method: "DELETE",
 				});
 				if (!res.ok) {
@@ -488,7 +453,7 @@ export function renderEditJourney({ mount }) {
 
 				setStatus(actStatusEl, "Lösche Aktivität…", "loading");
 				try {
-					const res = await fetch(`${API}/activities/${activityId}`, {
+					const res = await fetch(apiUrl(`/v1/activities/${activityId}`), {
 						method: "DELETE",
 					});
 					if (!res.ok) {
@@ -550,28 +515,10 @@ export function renderEditJourney({ mount }) {
 			const fd = new FormData(dayForm);
 			const nextDate = normalizeDayDate(fd.get("date"));
 
-			// Zeitraum-Check VOR Request
-			if (nextDate && !isDayDateWithinJourneyRange(nextDate)) {
-				setStatus(
-					dayStatusEl,
-					`Bitte ein Datum innerhalb des Reisezeitraums wählen (${startDateEl?.value || "?"}–${endDateEl?.value || "?"}).`,
-					"error",
-				);
-				return;
-			}
-
-			// Duplicate-Check VOR Request
-			if (isDuplicateDayDate({ date: nextDate, currentDayId: savedDayId })) {
-				setStatus(
-					dayStatusEl,
-					"Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
-					"error",
-				);
-				return;
-			}
-
 			const isUpdate = Boolean(savedDayId);
-			const url = isUpdate ? `${API}/days/${savedDayId}` : `${API}/days/`;
+			const url = isUpdate
+				? apiUrl(`/v1/days/${savedDayId}`)
+				: apiUrl(`/v1/days/`);
 			const method = isUpdate ? "PUT" : "POST";
 
 			const payload = isUpdate
@@ -656,8 +603,8 @@ export function renderEditJourney({ mount }) {
 
 			const isEdit = Boolean(editingActivityId);
 			const url = isEdit
-				? `${API}/activities/${editingActivityId}`
-				: `${API}/activities/`;
+				? apiUrl(`/v1/activities/${editingActivityId}`)
+				: apiUrl(`/v1/activities/`);
 			const method = isEdit ? "PUT" : "POST";
 
 			const payload = isEdit
@@ -742,7 +689,7 @@ export function renderEditJourney({ mount }) {
 		};
 
 		try {
-			const res = await fetch(`${API}/journey/${journeyId}`, {
+			const res = await fetch(apiUrl(`/v1/journey/${journeyId}`), {
 				method: "PUT",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(payload),
@@ -793,7 +740,7 @@ export function renderEditJourney({ mount }) {
 
 		try {
 			// Journey
-			const jRes = await fetch(`${API}/journey/${journeyId}`);
+			const jRes = await fetch(apiUrl(`/v1/journey/${journeyId}`));
 			const journey = await jRes.json().catch(() => ({}));
 			if (!jRes.ok) {
 				setStatus(
@@ -816,7 +763,7 @@ export function renderEditJourney({ mount }) {
 			setStatus(journeyStatus, "", "");
 
 			// Days
-			const dRes = await fetch(`${API}/days/by-journey/${journeyId}`);
+			const dRes = await fetch(apiUrl(`/v1/days/by-journey/${journeyId}`));
 			const days = await dRes.json().catch(() => []);
 			if (!dRes.ok) {
 				setStatus(daysStatus, "Tage konnten nicht geladen werden.", "error");
