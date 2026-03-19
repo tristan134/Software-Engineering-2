@@ -1,3 +1,4 @@
+import { apiUrl } from "../apiBase";
 import "../css/edit-new-journey.css";
 
 export function renderNewJourney({ mount }) {
@@ -78,18 +79,6 @@ export function renderNewJourney({ mount }) {
 
 	function normalizeDayDate(value) {
 		return (value || "").toString().trim();
-	}
-
-	function isDuplicateDayDate({ date, currentDayId }) {
-		const d = normalizeDayDate(date);
-		if (!d) return false;
-		for (const entry of usedDayDates) {
-			const [ed, eid] = entry.split("|");
-			if (ed !== d) continue;
-			if (currentDayId && eid && Number(eid) === Number(currentDayId)) continue;
-			return true;
-		}
-		return false;
 	}
 
 	function registerUsedDate({ date, dayId }) {
@@ -366,12 +355,9 @@ export function renderNewJourney({ mount }) {
 			setStatus(dayStatusEl, "Lösche Tag…", "loading");
 
 			try {
-				const res = await fetch(
-					`http://localhost:8000/api/v1/days/${savedDayId}`,
-					{
-						method: "DELETE",
-					},
-				);
+				const res = await fetch(apiUrl(`/v1/days/${savedDayId}`), {
+					method: "DELETE",
+				});
 
 				if (!res.ok) {
 					const data = await res.json().catch(() => ({}));
@@ -464,12 +450,9 @@ export function renderNewJourney({ mount }) {
 				setStatus(actStatusEl, "Lösche Aktivität…", "loading");
 
 				try {
-					const res = await fetch(
-						`http://localhost:8000/api/v1/activities/${activityId}/`,
-						{
-							method: "DELETE",
-						},
-					);
+					const res = await fetch(apiUrl(`/v1/activities/${activityId}/`), {
+						method: "DELETE",
+					});
 
 					if (!res.ok) {
 						const data = await res.json().catch(() => ({}));
@@ -545,16 +528,6 @@ export function renderNewJourney({ mount }) {
 			const fd = new FormData(dayForm);
 			const nextDate = normalizeDayDate(fd.get("date"));
 
-			// Duplicate-Check VOR Request
-			if (isDuplicateDayDate({ date: nextDate, currentDayId: savedDayId })) {
-				setStatus(
-					dayStatusEl,
-					"Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
-					"error",
-				);
-				return;
-			}
-
 			const payloadCreate = {
 				journey_id: journeyId,
 				title: (fd.get("title") || "").toString(),
@@ -568,8 +541,8 @@ export function renderNewJourney({ mount }) {
 
 			const isUpdate = Boolean(savedDayId);
 			const url = isUpdate
-				? `http://localhost:8000/api/v1/days/${savedDayId}/`
-				: `http://localhost:8000/api/v1/days/`;
+				? apiUrl(`/v1/days/${savedDayId}/`)
+				: apiUrl("/v1/days/");
 
 			const method = isUpdate ? "PUT" : "POST";
 			const payload = isUpdate ? payloadUpdate : payloadCreate;
@@ -664,8 +637,8 @@ export function renderNewJourney({ mount }) {
 
 			const isEdit = Boolean(editingActivityId);
 			const url = isEdit
-				? `http://localhost:8000/api/v1/activities/${editingActivityId}/`
-				: `http://localhost:8000/api/v1/activities/`;
+				? apiUrl(`/v1/activities/${editingActivityId}/`)
+				: apiUrl("/v1/activities/");
 
 			const method = isEdit ? "PUT" : "POST";
 			const payload = isEdit ? payloadUpdate : payloadCreate;
@@ -743,7 +716,7 @@ export function renderNewJourney({ mount }) {
 		};
 
 		try {
-			const res = await fetch("http://localhost:8000/api/v1/journey/create", {
+			const res = await fetch(apiUrl("/v1/journey/create"), {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(payload),

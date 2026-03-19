@@ -1,7 +1,7 @@
+import { apiUrl } from "../apiBase";
 import "../css/edit-new-journey.css";
 
 export function renderEditJourney({ mount }) {
-	const API = "http://localhost:8000/api/v1";
 	const hash = window.location.hash;
 	const journeyId = Number(hash.split("/")[2]);
 
@@ -76,28 +76,11 @@ export function renderEditJourney({ mount }) {
 	const startDateEl = form.querySelector("#start_date");
 	const endDateEl = form.querySelector("#end_date");
 
-	let initialJourneyStartDate = null;
 	// Merkt alle bereits belegten Tages-Daten dieser Reise (YYYY-MM-DD)
 	const usedDayDates = new Set();
 
 	function normalizeDayDate(value) {
 		return (value || "").toString().trim();
-	}
-
-	function isDuplicateDayDate({ date, currentDayId }) {
-		const d = normalizeDayDate(date);
-		if (!d) return false;
-		for (const entry of usedDayDates) {
-			// entry-Formate:
-			// - "YYYY-MM-DD" (unsaved/unknown)
-			// - "YYYY-MM-DD|<id>" (saved)
-			const [ed, eid] = entry.split("|");
-			if (ed !== d) continue;
-			if (currentDayId && eid && Number(eid) === Number(currentDayId)) continue;
-			// Gleicher Tag oder anderer Day hat bereits dieses Datum
-			return true;
-		}
-		return false;
 	}
 
 	function registerUsedDate({ date, dayId }) {
@@ -274,7 +257,7 @@ export function renderEditJourney({ mount }) {
 	}
 
 	async function loadActivities(dayId) {
-		const res = await fetch(`${API}/activities/by-day/${dayId}`);
+		const res = await fetch(apiUrl(`/v1/activities/by-day/${dayId}`));
 		if (!res.ok) return [];
 		return await res.json().catch(() => []);
 	}
@@ -321,11 +304,6 @@ export function renderEditJourney({ mount }) {
 			? normalizeDayDate(initialDay.date)
 			: null;
 
-		// Wenn initialDay bereits existiert: Datum im Set registrieren
-		if (initialDay?.date && initialDay?.id) {
-			registerUsedDate({ date: initialDay.date, dayId: initialDay.id });
-		}
-
 		function setActivityDeleteDisabled(activityId, disabled) {
 			const btn = activitiesListEl.querySelector(
 				`[data-delete-activity="${activityId}"]`,
@@ -342,7 +320,6 @@ export function renderEditJourney({ mount }) {
 			if (!dayTitleEl) return;
 			const dayDate = dayForm.querySelector("[name='date']")?.value;
 			const start = startDateEl?.value;
-			const end = endDateEl?.value;
 
 			const dayNumber = computeDayNumber({ journeyStart: start, dayDate });
 			if (dayNumber == null) {
@@ -351,22 +328,6 @@ export function renderEditJourney({ mount }) {
 			}
 
 			dayTitleEl.textContent = `Tag ${dayNumber}`;
-
-			// Optional: Range-Hinweis, falls Datum außerhalb der Reise liegt.
-			const endDate = parseDateInputValueToUtcMidnight(end);
-			const dayDateUtc = parseDateInputValueToUtcMidnight(dayDate);
-			const startUtc = parseDateInputValueToUtcMidnight(start);
-			if (
-				startUtc &&
-				dayDateUtc &&
-				(dayDateUtc < startUtc || (endDate && dayDateUtc > endDate))
-			) {
-				setStatus(
-					dayStatusEl,
-					`Hinweis: Das Datum liegt außerhalb des Reisezeitraums (${start || "?"}–${end || "?"}).`,
-					"error",
-				);
-			}
 		}
 
 		// Prefill day
@@ -398,7 +359,7 @@ export function renderEditJourney({ mount }) {
 
 			setStatus(dayStatusEl, "Lösche Tag…", "loading");
 			try {
-				const res = await fetch(`${API}/days/${savedDayId}`, {
+				const res = await fetch(apiUrl(`/v1/days/${savedDayId}`), {
 					method: "DELETE",
 				});
 				if (!res.ok) {
@@ -494,7 +455,7 @@ export function renderEditJourney({ mount }) {
 
 				setStatus(actStatusEl, "Lösche Aktivität…", "loading");
 				try {
-					const res = await fetch(`${API}/activities/${activityId}`, {
+					const res = await fetch(apiUrl(`/v1/activities/${activityId}`), {
 						method: "DELETE",
 					});
 					if (!res.ok) {
@@ -556,18 +517,10 @@ export function renderEditJourney({ mount }) {
 			const fd = new FormData(dayForm);
 			const nextDate = normalizeDayDate(fd.get("date"));
 
-			// Duplicate-Check VOR Request
-			if (isDuplicateDayDate({ date: nextDate, currentDayId: savedDayId })) {
-				setStatus(
-					dayStatusEl,
-					"Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
-					"error",
-				);
-				return;
-			}
-
 			const isUpdate = Boolean(savedDayId);
-			const url = isUpdate ? `${API}/days/${savedDayId}` : `${API}/days/`;
+			const url = isUpdate
+				? apiUrl(`/v1/days/${savedDayId}`)
+				: apiUrl(`/v1/days/`);
 			const method = isUpdate ? "PUT" : "POST";
 
 			const payload = isUpdate
@@ -652,8 +605,8 @@ export function renderEditJourney({ mount }) {
 
 			const isEdit = Boolean(editingActivityId);
 			const url = isEdit
-				? `${API}/activities/${editingActivityId}`
-				: `${API}/activities/`;
+				? apiUrl(`/v1/activities/${editingActivityId}`)
+				: apiUrl(`/v1/activities/`);
 			const method = isEdit ? "PUT" : "POST";
 
 			const payload = isEdit
@@ -727,38 +680,22 @@ export function renderEditJourney({ mount }) {
 		e.preventDefault();
 		setStatus(journeyStatus, "Speichere Änderungen…", "loading");
 
-		// Fallback: falls initialJourneyStartDate aus irgendeinem Grund nicht gesetzt wurde,
-		// nehmen wir den aktuellen (bisherigen) Wert aus dem Input als "initial".
-		if (!initialJourneyStartDate) {
-			initialJourneyStartDate = startDateEl?.value || null;
-		}
-
 		const fd = new FormData(form);
-		const nextStartDate = (fd.get("start_date") || "").toString() || null;
-
-		const shiftDays = Boolean(
-			nextStartDate &&
-				initialJourneyStartDate &&
-				nextStartDate !== initialJourneyStartDate,
-		);
 
 		const payload = {
 			title: (fd.get("title") || "").toString(),
 			price: (fd.get("price") || "").toString() || null,
-			start_date: nextStartDate,
+			start_date: (fd.get("start_date") || "").toString() || null,
 			end_date: (fd.get("end_date") || "").toString() || null,
 			description: (fd.get("description") || "").toString() || "",
 		};
 
 		try {
-			const res = await fetch(
-				`${API}/journey/${journeyId}${shiftDays ? "?shift_days=true" : ""}`,
-				{
-					method: "PUT",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(payload),
-				},
-			);
+			const res = await fetch(apiUrl(`/v1/journey/${journeyId}`), {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			});
 
 			const data = await res.json().catch(() => ({}));
 			if (!res.ok) {
@@ -770,37 +707,7 @@ export function renderEditJourney({ mount }) {
 				return;
 			}
 
-			// Nach erfolgreichem Save: Startdatum-Marker aktualisieren
-			initialJourneyStartDate = data.start_date || payload.start_date;
-
 			setStatus(journeyStatus, "Änderungen gespeichert!", "success");
-
-			// UI auffrischen, falls Days verschoben wurden (Titel/Offsets)
-			if (shiftDays) {
-				setStatus(daysStatus, "Lade Tage…", "loading");
-				const dRes = await fetch(`${API}/days/by-journey/${journeyId}`);
-				const days = await dRes.json().catch(() => []);
-				if (dRes.ok) {
-					daysList.innerHTML = "";
-					for (const d of days) {
-						const localId = `day-${d.id}`;
-						const wrapper = document.createElement("div");
-						wrapper.innerHTML = dayTemplate({ localId });
-						const dayCardEl = wrapper.firstElementChild;
-						daysList.appendChild(dayCardEl);
-						const activities = await loadActivities(d.id);
-						wireDayCard(dayCardEl, d, activities);
-					}
-					rebuildUsedDatesFromDays(days);
-					setStatus(daysStatus, "", "");
-				} else {
-					setStatus(
-						daysStatus,
-						"Tage konnten nicht neu geladen werden.",
-						"error",
-					);
-				}
-			}
 		} catch (err) {
 			console.error(err);
 			setStatus(
@@ -835,7 +742,7 @@ export function renderEditJourney({ mount }) {
 
 		try {
 			// Journey
-			const jRes = await fetch(`${API}/journey/${journeyId}`);
+			const jRes = await fetch(apiUrl(`/v1/journey/${journeyId}`));
 			const journey = await jRes.json().catch(() => ({}));
 			if (!jRes.ok) {
 				setStatus(
@@ -854,13 +761,11 @@ export function renderEditJourney({ mount }) {
 			form.querySelector("[name='end_date']").value = journey.end_date || "";
 			form.querySelector("[name='description']").value =
 				journey.description || "";
-			// Startdatum merken, um später festzustellen ob verschoben wurde
-			initialJourneyStartDate = journey.start_date || null;
 
 			setStatus(journeyStatus, "", "");
 
 			// Days
-			const dRes = await fetch(`${API}/days/by-journey/${journeyId}`);
+			const dRes = await fetch(apiUrl(`/v1/days/by-journey/${journeyId}`));
 			const days = await dRes.json().catch(() => []);
 			if (!dRes.ok) {
 				setStatus(daysStatus, "Tage konnten nicht geladen werden.", "error");

@@ -1,4 +1,5 @@
 import "../css/fulljourney.css";
+import { apiUrl } from "../apiBase";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -61,7 +62,7 @@ export async function renderFullJourney({ mount }) {
 	}
 
 	try {
-		const res = await fetch(`http://localhost:8000/api/v1/journey/${id}`);
+		const res = await fetch(apiUrl(`/v1/journey/${id}`));
 
 		if (!res.ok) {
 			mount.innerHTML = `<p class="alert alert-error">❌ Reise konnte nicht geladen werden.</p>`;

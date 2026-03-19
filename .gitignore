@@ -21,4 +21,3 @@ __pycache__/
 # Local configuration files
 Justfile
 docker-compose.local.yml
-docker-compose-local.yml
