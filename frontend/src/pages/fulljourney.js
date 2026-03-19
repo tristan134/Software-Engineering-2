@@ -143,8 +143,8 @@ function renderActivity(activity) {
 	const end = formatTime(activity.end_time);
 
 	let timeDisplay = "-";
-	if (start && end) timeDisplay = `${start} – ${end}`;
-	else if (start) timeDisplay = start;
+	if (start && end) timeDisplay = `${start} Uhr – ${end} Uhr`;
+	else if (start) timeDisplay = `${start} Uhr`;
 
 	const files = Array.isArray(activity.files) ? activity.files : [];
 
