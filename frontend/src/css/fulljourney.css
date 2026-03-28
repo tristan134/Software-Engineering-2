@@ -41,9 +41,6 @@
 	margin-right: auto;
 }
 
-/* =====================================================
-   Abflug- und Ankunftszeiten
-   ===================================================== */
 .journey-flight-timeline {
 	display: flex;
 	flex-direction: column;
@@ -216,20 +213,4 @@
 
 .activity-file a:hover {
 	text-decoration: underline;
-}
-
-/* =====================================================
-   Helfer
-   ===================================================== */
-.text-muted {
-	color: var(--color-text-muted);
-}
-
-.alert-error {
-	color: #b50000;
-	background: #ffe6e6;
-	padding: var(--space-md);
-	border-radius: 10px;
-	border: 1px solid #ffb7b7;
-	margin-bottom: var(--space-lg);
 }
