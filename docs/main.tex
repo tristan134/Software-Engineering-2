@@ -70,8 +70,9 @@
     \subsection{Developer}
     \subsubsection{Voraussetzungen}
         Um am Projekt mitzuarbeiten, braucht man eine übliche Development-Umgebung mit Git sowie Docker.
-        Die lokale Entwicklung ist so aufgebaut, dass die komplette Anwendung (Datenbank, Backend, Frontend)
-        über Docker Compose gestartet werden kann. Folgende Voraussetzungen sollten auf dem System installiert sein:
+        Die Anwendung ist so konzipiert, dass eine lokale Entwicklung möglich ist, bei der alle Komponenten
+        (Datenbank, Backend, Frontend) über Docker Compose gestartet werden können.
+        Folgende Voraussetzungen sollten auf dem System installiert sein:
         \begin{itemize}[leftmargin=*]
             \item Git
             \item Docker \& Docker Compose
@@ -86,7 +87,7 @@
         \end{enumerate}
 
     \subsubsection{Installationen}
-        Für die Installationen ist es sinnvoll, eine virtuelle Entwicklungsumgebung zu nutzen, damit die Dependencies isoliert sind.
+        Für die Installationen ist es sinnvoll, ein dediziertes virtuelles Python-Environment zu nutzen, damit die Dependencies isoliert sind.
 
     \begin{enumerate}
         \item \texttt{pre-commit} ist verpflichtend und wird lokal installiert. Empfohlen ist die Installation über \texttt{pip}:
@@ -98,21 +99,21 @@
             \begin{itemize}[leftmargin=*]
                 \item \texttt{pre-commit install}
             \end{itemize}
-        \item \texttt{pytest} kommt in der Regel über die Backend-Dependencies. Dazu sollten die Requirements des Backends installiert werden:
+        \item Damit \texttt{pytest} und weitere Python spezifische Funktionen funktionieren, sollten die Requirements aus dem Backend installiert werden:
                 \begin{itemize}[leftmargin=*]
                     \item \texttt{pip install -r backend/requirements.txt}
                 \end{itemize}
     \end{enumerate}
 
     \subsubsection{Entwicklung}
-        Der Code liegt getrennt in \texttt{backend/} und \texttt{frontend/}. Für die lokale Umgebung existiert
+        Der Code liegt getrennt in \texttt{backend/} und \texttt{frontend/}. Um die Anwendung lokal zu starten existiert
         \texttt{docker-compose.local.yml}, das die Services direkt aus dem Quellcode baut. Für den produktiven Betrieb gibt
-        es \texttt{docker-compose.yml}, das Images aus der Registry lädt und über die Variable \texttt{VERSION} pinnt.
+        es \texttt{docker-compose.yml}, welche die Images aus der Github-Registry lädt und über die Variable \texttt{VERSION} pinnt.
 
         \paragraph{Lokales Setup}
             Am einfachsten ist es, lokal immer über Compose zu arbeiten. Dazu soll im Projektroot eine \texttt{.env}-Datei angelegt
             und die benötigten Variablen eingetragen werden (insbesondere \texttt{POSTGRES\_VERSION}, \texttt{POSTGRES\_USER},
-            \texttt{POSTGRES\_PASSWORD}, \texttt{POSTGRES\_DB}, \texttt{POSTGRES\_HOST}, \texttt{POSTGRES\_PORT}). Danach kann die Umgebung gestartet werden:
+            \texttt{POSTGRES\_PASSWORD}, \texttt{POSTGRES\_DB}, \texttt{POSTGRES\_HOST}, \texttt{POSTGRES\_PORT}). Danach kann die Umgebung gebaut werden:
             \begin{itemize}[leftmargin=*]
                 \item \texttt{docker compose -f docker-compose.local.yml up \-\-build}
             \end{itemize}
@@ -120,8 +121,8 @@
             unter \texttt{http://localhost:8080}.
 
         \paragraph{Frontend lokal entwickeln}
-            Für schnelleres Feedback kann das Frontend auch unabhängig vom Compose-Container als Dev-Server starten.
-            Dazu müssen zuerst die Dependencies installiert und danach der Dev-Server gestartet werden:
+            Für schnelleres Feedback kann das Frontend auch unabhängig vom Docker-Container als npm-Dev-Server gestartet werden.
+            Dazu müssen zuerst die frontend-Dependencies installiert und danach der Dev-Server gestartet werden:
             \begin{enumerate}[leftmargin=*]
                 \item \texttt{cd frontend}
                 \item \texttt{npm install}
@@ -133,14 +134,15 @@
             Auf den \texttt{main} wird \textbf{nicht} force-gepusht. Zusätzlich gilt, dass Commits signiert werden sollen
             (Git commit signing via GPG oder SSH), damit die Herkunft der Änderungen nachvollziehbar ist.
 
-            Bei jedem Pull Request laufen automatisch die GitHub Workflows und die Tests durch. Erst wenn alle Checks erfolgreich sind, kann gemerged werden.
-            Zudem muss jeder Pull Request von mindestens einem anderen Teammitglied reviewed und freigegeben werden, bevor er in den \texttt{main}-Branch gemerged werden kann.
+            Bei jedem Pull Request laufen automatisch die GitHub Workflows und Tests durch.
+            Zudem muss jeder Pull Request von mindestens einem anderen Teammitglied reviewed und freigegeben werden.
+            Erst wenn alle Checks erfolgreich sind, können die Änderungen über den Pull Request in den \texttt{main}-Branch gemerged werden.
 
         \paragraph{Versionierung}
             In \texttt{docker-compose.yml} werden produktive Images über \break \texttt{ghcr.io/...:\$\{VERSION\}} referenziert.
             Als Konvention entspricht \texttt{VERSION} einem Git-Tag (z.B. \texttt{v1.0.0}). Sobald ein neues Feature fertig ist
-            und der Pull Request durchgelaufen ist, soll ein neues Tag auf dem \texttt{main}-Branch erstellt und gepusht werden, damit die neue Version in Produktion deployt werden kann.
-            Dann läuft automatisch eine Action an, die die Images baut und in die Registry pusht.
+            und der Pull Request durchgelaufen ist, soll ein neues Tag auf dem \texttt{main}-Branch erstellt und gepusht werden, damit die neue Version in Produktivsystemen deployt werden kann.
+            Dazu läuft automatisch eine Action an, die Images aus dem Quellcode baut und in die Github-Registry pusht.
     
             Folgende Tag-Konventionen ist für die Versionierung vorgesehen:
             \begin{itemize}[leftmargin=*]
@@ -154,8 +156,9 @@
             \end{itemize}
 
     \subsubsection{Tests}
-        Sobald ein Feature implementiert oder ein Bugfix gemacht wird, die etwas an den Backend-Routen verändern, muss ein passender Test ergänzt werden. Die Tests sollen
-        \textbf{lokal} ausführbar sein und vor dem Öffnen eines Pull Requests auch lokal einmal erfolgreich durchgelaufen sein.
+        Sobald an den Routen im Backend etwas verändert oder Neue hinzugefügt werden, muss ein passender Pytest geschrieben werden.
+        Die Tests sollen einheitlich in dem Ordner \texttt{backend/tests} liegen und im Namen die zu testende Endpoint Route enthalten.
+        Spätestens vor einem Pull Request müssen die Tests erfolgreich lokal durchlaufen sein, damit Fehler frühst möglich zur Behebung erkannt werden können.
         Um die Tests lokal auszuführen, kann der folgende Befehl genutzt werden:
         \begin{itemize}[leftmargin=*]
             \item \texttt{cd backend/tests \&\& pytest}
@@ -164,16 +167,17 @@
     \subsubsection{Troubleshooting}
         Wenn die Datenbank nicht startet, sind es fast immer fehlende bzw. inkonsistente \break \texttt{POSTGRES\_*}-Variablen oder ein
         kaputter Volume-Zustand. In letzter Konsequenz hilft \texttt{docker compose -f docker-compose.local.yml down -v} (Achtung: löscht Volumes und damit lokale Daten!).
-        Wenn Ports belegt sind, soll geprüft werden, ob \texttt{8000} (Backend) oder \texttt{8080} (Frontend) bereits von anderen Diensten verwendet werden.
+        Wenn die benötigten Ports belegt sind, ist selbstständig zu prüfen, ob \texttt{8000} (Backend) oder \texttt{8080} (Frontend) bereits von anderen Diensten auf dem Computer verwendet werden.
 \newpage
 \subsection{Admin}
         Der produktive Betrieb ist containerbasiert und wird über \texttt{docker-compose.yml} beschrieben. Im Gegensatz zur
         lokalen Entwicklung wird in Produktion nicht aus dem Quellcode gebaut, sondern es werden versionierte Images aus der
-        Container-Registry geladen. Dadurch ist ein Deployment reproduzierbar: Dieselbe \texttt{VERSION} bedeutet dieselben Images.
+        Github-Container-Registry geladen. Dadurch ist ein Deployment reproduzierbar. Dieselbe \texttt{VERSION} bedeutet dieselben Images.
 
     \subsubsection{Voraussetzungen}
         Benötigt wird ein Server bzw. eine VM mit \emph{Docker} und \emph{Docker Compose} sowie ausreichend Speicherplatz für die Daten.
-        Ein minimaler Betrieb benötigt lediglich die Portfreigabe für den Port \texttt{8080} für das Frontend (UI). Der Backend-Port \texttt{8000} (API) muss nur dann zusätzlich geöffnet werden, wenn die API direkt von außen erreichbar sein soll (intern wird sie vom Frontend über \texttt{backend:8000} angesprochen).
+        Ein minimaler Betrieb benötigt lediglich die Portfreigabe für den Port \texttt{8080} für das Frontend (UI).
+        Der Backend-Port \texttt{8000} (API) muss nur dann zusätzlich nach außen geöffnet werden, wenn die API direkt von außen über Swagger UI erreichbar sein soll (das Frontend spricht das Backend über den Nginx-Server mit \texttt{backend:8000} an).
 
     \subsubsection{Produktives Setup}
         Die \texttt{docker-compose.yml} wird auf den Server kopiert und eine \texttt{.env}-Datei daneben angelegt, in
