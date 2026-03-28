@@ -19,7 +19,7 @@ async function loadJourneys() {
 		const res = await fetch(apiUrl("/v1/journey"));
 		const journeys = await res.json();
 
-		// Wenn KEINE Reisen existieren → Hinweistext anzeigen
+		// Wenn KEINE Reisen existieren: Hinweistext anzeigen
 		if (!journeys || journeys.length === 0) {
 			container.innerHTML = `
         <p style="padding: 1rem; font-size: 1.1rem;">
@@ -30,7 +30,7 @@ async function loadJourneys() {
 			return;
 		}
 
-		// Wenn Reisen existieren → Karten rendern
+		// Wenn Reisen existieren: Cards rendern
 		container.innerHTML = journeys
 			.map(
 				(j) => `
@@ -43,15 +43,9 @@ async function loadJourneys() {
             <p><strong>Ende:</strong> ${new Date(j.end_date).toLocaleDateString()}</p>
             
             <div>
-                <button class = "btn" onclick="deleteJourney(${
-									j.id
-								})">🗑️</button>
-                <button class = "btn" onclick="showFullJourney(${
-									j.id
-								})">👀</button>
-                <button class = "btn" onclick="editJourney(${
-									j.id
-								})">Bearbeiten</button>
+                <button class = "btn" onclick="deleteJourney(${j.id})">🗑️</button>
+                <button class = "btn" onclick="showFullJourney(${j.id})">👀</button>
+                <button class = "btn" onclick="editJourney(${j.id})">Bearbeiten</button>
             </div>
           </div>
         </div>
@@ -86,7 +80,8 @@ async function deleteJourney(id) {
 			method: "DELETE",
 		});
 
-		loadJourneys(); // Dashboard nach dem Löschen aktualisieren
+		// Nach dem Löschen die Liste neu laden, statt die Seite hart zu refreshen.
+		loadJourneys();
 	} catch (err) {
 		console.error("Fehler beim Löschen:", err);
 	}
@@ -94,7 +89,6 @@ async function deleteJourney(id) {
 window.deleteJourney = deleteJourney;
 
 function editJourney(id) {
-	// Navigiert zur Edit-Seite
 	window.location.hash = `#/editjourney/${id}`;
 }
 window.editJourney = editJourney;

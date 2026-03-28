@@ -74,9 +74,9 @@ export function renderEditJourney({ mount }) {
 	const daysStatus = mount.querySelector("#daysStatus");
 
 	const startDateEl = form.querySelector("#start_date");
-	const endDateEl = form.querySelector("#end_date");
 
-	// Merkt alle bereits belegten Tages-Daten dieser Reise (YYYY-MM-DD)
+	// Merkt alle bereits belegten Tages-Daten dieser Reise (YYYY-MM-DD).
+	// Hilft dabei, Duplikate schon im UI zu verhindern (Backend prüft aber auch nochmal).
 	const usedDayDates = new Set();
 
 	function normalizeDayDate(value) {
@@ -130,7 +130,7 @@ export function renderEditJourney({ mount }) {
 
 	function parseDateInputValueToUtcMidnight(value) {
 		// input[type=date] liefert YYYY-MM-DD ohne Zeitzone.
-		// Wir parsen explizit als UTC-Mitternacht, damit Offsets stabil bleiben.
+		// Wir parsen explizit als UTC-Mitternacht.
 		if (!value || typeof value !== "string") return null;
 		const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 		if (!m) return null;
@@ -318,6 +318,9 @@ export function renderEditJourney({ mount }) {
 
 		function updateDayTitleFromDate() {
 			if (!dayTitleEl) return;
+
+			// In der Liste steht dann direkt "Tag X" inkl. Datum.
+			// Falls die Berechnung nicht klappt, fallen wir einfach auf den normalen Titel zurück.
 			const dayDate = dayForm.querySelector("[name='date']")?.value;
 			const start = startDateEl?.value;
 
@@ -330,7 +333,7 @@ export function renderEditJourney({ mount }) {
 			dayTitleEl.textContent = `Tag ${dayNumber}`;
 		}
 
-		// Prefill day
+		// Tag vorbefüllen
 		if (initialDay) {
 			dayForm.querySelector("[name='date']").value = initialDay.date || "";
 			dayForm.querySelector("[name='title']").value = initialDay.title || "";
@@ -565,7 +568,7 @@ export function renderEditJourney({ mount }) {
 					renderActivities(activitiesListEl, activities);
 				}
 
-				// usedDayDates aktualisieren (bei Update evtl. altes Datum entfernen)
+				// usedDayDates aktualisieren
 				if (
 					lastSavedDate &&
 					(lastSavedDate !== normalizeDayDate(data?.date) || !isUpdate)

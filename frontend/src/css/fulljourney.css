@@ -1,5 +1,5 @@
 /* =====================================================
-   Journey Page
+   Journey Seite
    ===================================================== */
 .journey-page {
 	max-width: 900px;
@@ -9,7 +9,7 @@
 }
 
 /* =====================================================
-   Header Box (Apple-like)
+   Header Box
    ===================================================== */
 .journey-header-box {
 	background: var(--color-surface);
@@ -42,7 +42,7 @@
 }
 
 /* =====================================================
-   Flight Timeline (Abflug → Linie → Ankunft)
+   Abflug- und Ankunftszeiten
    ===================================================== */
 .journey-flight-timeline {
 	display: flex;
@@ -104,7 +104,6 @@
 	margin-bottom: var(--space-xl);
 }
 
-/* Marker */
 .timeline-marker {
 	width: 16px;
 	height: 16px;
@@ -116,7 +115,6 @@
 	box-shadow: var(--shadow-sm);
 }
 
-/* Line */
 .timeline-line {
 	position: absolute;
 	left: 11px;
@@ -126,7 +124,6 @@
 	background: var(--color-border);
 }
 
-/* Timeline Card */
 .timeline-content {
 	background: var(--color-surface);
 	padding: var(--space-xl);
@@ -162,7 +159,6 @@
 	padding-bottom: 6px;
 }
 
-/* Activity Card */
 .activity-card {
 	background: var(--color-activities-surface);
 	padding: var(--space-lg);
@@ -180,7 +176,6 @@
 		box-shadow 0.15s ease;
 }
 
-/* ✨ Hover Effekt */
 .activity-card:hover {
 	transform: translateY(-3px);
 	box-shadow: var(--shadow-md);
@@ -193,7 +188,6 @@
 	color: var(--color-text);
 }
 
-/* ✨ Uhrzeit hervorgehoben */
 .activity-time {
 	font-size: 1.15rem;
 	font-weight: 600;
@@ -225,7 +219,7 @@
 }
 
 /* =====================================================
-   Helpers
+   Helfer
    ===================================================== */
 .text-muted {
 	color: var(--color-text-muted);

@@ -12,6 +12,7 @@ router = APIRouter(prefix="/journey", tags=["journey"])
 
 @router.get("", response_model=List[ShowJourneySummarize])
 def get_all_journeys(db: Session = Depends(get_db)):
+    """Alle Reisen auflisten, sortiert nach Start-/Enddatum (neueste zuerst)."""
     return (
         db.query(models.Journey)
         .order_by(
@@ -25,6 +26,7 @@ def get_all_journeys(db: Session = Depends(get_db)):
 
 @router.get("/{journey_id}", response_model=Journey)
 def get_journey(journey_id: int, db: Session = Depends(get_db)):
+    """Details zu einer Reise abrufen."""
     journey = db.query(models.Journey).filter(models.Journey.id == journey_id).first()
 
     if journey is None:
@@ -37,9 +39,11 @@ def get_journey(journey_id: int, db: Session = Depends(get_db)):
     "/create", status_code=status.HTTP_201_CREATED, response_model=schemas.Journey
 )
 def create_journey(payload: JourneyCreate, db: Session = Depends(get_db)):
+    """Neue Reise anlegen."""
     if not payload.title.strip():
         raise HTTPException(status_code=400, detail="Titel darf nicht leer sein")
 
+    # Schützt vor "kaputtem" Zeitraum (z.B. vertauschte Eingabe im Frontend)
     if (
         payload.start_date
         and payload.end_date
@@ -68,14 +72,12 @@ def create_journey(payload: JourneyCreate, db: Session = Depends(get_db)):
 def update_journey(
     journey_id: int,
     payload: schemas.JourneyUpdate,
-    shift_days: bool = False,
     db: Session = Depends(get_db),
 ):
+    """Reiseinformationen aktualisieren."""
     journey = db.get(models.Journey, journey_id)
     if not journey:
         raise HTTPException(status_code=404, detail="Reise nicht gefunden")
-
-    old_start_date = journey.start_date
 
     if payload.title is not None:
         t = payload.title.strip()
@@ -104,22 +106,6 @@ def update_journey(
     if payload.description is not None:
         journey.description = payload.description or ""
 
-    # Optional: alle Tage relativ zum Startdatum mitverschieben
-    if shift_days and payload.start_date is not None and old_start_date is not None:
-        delta = payload.start_date - old_start_date
-        for d in journey.days:
-            d.date = d.date + delta
-
-    # Validierung: liegen die (ggf. verschobenen) Tage im neuen Zeitraum?
-    # Gilt auch beim reinen Verkürzen/Ändern von start/end ohne shift_days.
-    if journey.start_date and journey.end_date:
-        for d in journey.days:
-            if d.date < journey.start_date or d.date > journey.end_date:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Durch das Verschieben liegen mindestens ein Tag außerhalb des neuen Reisezeitraums. Bitte die entsprechenden Tage zuerst löschen.",
-                )
-
     db.commit()
     db.refresh(journey)
     return journey
@@ -127,6 +113,7 @@ def update_journey(
 
 @router.delete("/{journey_id}", status_code=204)
 def delete_journey(journey_id: int, db: Session = Depends(get_db)):
+    """Reise löschen."""
     journey = db.query(models.Journey).filter(models.Journey.id == journey_id).first()
 
     if journey is None:

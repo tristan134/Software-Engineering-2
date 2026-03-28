@@ -12,11 +12,12 @@ router = APIRouter(prefix="/days", tags=["days"])
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_day(payload: DayCreate, db: Session = Depends(get_db)):
+    """Einen neuen Tag zu einer Reise hinzufügen."""
     journey = db.get(Journey, payload.journey_id)
     if not journey:
         raise HTTPException(status_code=404, detail="Reise nicht gefunden")
 
-    # Duplikate verhindern: pro Reise darf ein Datum nur einmal existieren
+    # Duplikate verhindern: pro Reise darf ein Datum nur einmal existieren.
     existing = db.scalar(
         select(Day.id).where(
             Day.journey_id == payload.journey_id,
@@ -29,6 +30,7 @@ def create_day(payload: DayCreate, db: Session = Depends(get_db)):
             detail="Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
         )
 
+    # Tage müssen im Reisezeitraum liegen (wenn Start/Ende gesetzt sind).
     if payload.date and journey.start_date and payload.date < journey.start_date:
         raise HTTPException(
             status_code=400, detail="Datum liegt vor dem Startdatum der Reise"
@@ -48,7 +50,6 @@ def create_day(payload: DayCreate, db: Session = Depends(get_db)):
         db.commit()
     except IntegrityError:
         db.rollback()
-        # Fallback falls UniqueConstraint greift
         raise HTTPException(
             status_code=400,
             detail="Bitte ein anderes Datum wählen. Dieser Tag ist bereits vorhanden.",
@@ -60,6 +61,7 @@ def create_day(payload: DayCreate, db: Session = Depends(get_db)):
 
 @router.get("/by-journey/{journey_id}")
 def list_days_for_journey(journey_id: int, db: Session = Depends(get_db)):
+    """Alle Tage einer Reise auflisten."""
     journey = db.get(Journey, journey_id)
     if not journey:
         raise HTTPException(status_code=404, detail="Reise nicht gefunden")
@@ -68,6 +70,7 @@ def list_days_for_journey(journey_id: int, db: Session = Depends(get_db)):
 
 @router.put("/{day_id}", response_model=schemas.Day)
 def update_day(day_id: int, payload: schemas.DayUpdate, db: Session = Depends(get_db)):
+    """Tag aktualisieren."""
     day = db.get(Day, day_id)
     if not day:
         raise HTTPException(status_code=404, detail="Tag nicht gefunden")
@@ -122,6 +125,7 @@ def update_day(day_id: int, payload: schemas.DayUpdate, db: Session = Depends(ge
 
 @router.delete("/{day_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_day(day_id: int, db: Session = Depends(get_db)):
+    """Tag löschen."""
     day = db.get(Day, day_id)
     if not day:
         raise HTTPException(status_code=404, detail="Tag nicht gefunden")

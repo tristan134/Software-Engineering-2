@@ -5,6 +5,8 @@ from app.db.session import Base
 import datetime
 from decimal import Decimal
 
+# Tabellen Journey, Day und Activity für die Reiseplanung
+
 
 class Journey(Base):
     __tablename__ = "journey"
