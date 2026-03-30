@@ -44,13 +44,13 @@ async function loadJourneys() {
             <div>
                 <button class = "btn" onclick="deleteJourney(${
 									j.id
-								})">🗑️</button>
+								})"><i class="fa-solid fa-trash"></i></button>
                 <button class = "btn" onclick="showFullJourney(${
 									j.id
-								})">👀</button>
+								})"><i class="fa-solid fa-eye"></i></button>
                 <button class = "btn" onclick="editJourney(${
 									j.id
-								})">Bearbeiten</button>
+								})"><i class="fa-solid fa-pen-to-square"></i></button>
             </div>
           </div>
         </div>

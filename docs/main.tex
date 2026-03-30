@@ -23,6 +23,7 @@
 \usepackage{array}
 \usepackage{titlesec}
 \usepackage{minted}
+\usepackage{tikz}
 \usepackage{hyperref}
 \hypersetup{
   colorlinks=true,
@@ -60,11 +61,123 @@
 
 \section{Journeo}
 \subsection{Überblick}
+Journeo ist eine webbasierte Anwendung, die es Nutzern ermöglicht, ihre Reisen zu planen und zu organisieren.
+Die Anwendung bietet Funktionen wie das Anlegen von Reisen, die Verwaltung von Reisedetails und die Planung.
+Die Zielgruppe von Journeo sind Privatpersonen und Reisebegeisterte, die ihre Reisen effizient und übersichtlich planen möchten.
+Die Anwendung ist so konzipiert, dass sie einfach zu bedienen ist und eine intuitive Benutzeroberfläche bietet, um die Verwaltung von Reisen zu erleichtern.
+
+
+
 \subsection{Architektur}
+Journeo ist als klassische 3-Schichten-Webanwendung umgesetzt und wird containerisiert betrieben.
+Die Anwendung besteht aus einem Frontend (Client/Präsentation), einem Backend (Logik/REST-API) und einer relationalen Datenbank (Persistenz).
+
+\subsubsection{Komponenten}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Frontend (UI):} Statische Webanwendung (Vite/JavaScript), die dem Nutzer die Benutzeroberfläche bereitstellt.
+          In Produktion wird das Frontend über einen Nginx-Webserver ausgeliefert.
+    \item \textbf{Backend (API):} Python-Webservice (FastAPI), der die fachliche Logik kapselt und eine REST-API bereitstellt
+          (u.a. für Reisen, Tage und Aktivitäten).
+          Die API ist versioniert (\texttt{/api/v1/...}).
+    \item \textbf{Datenbank:} PostgreSQL als persistente Datenhaltung.
+          Das Backend greift über ein ORM (SQLAlchemy) auf die Daten zu. Das Schema wird in Modellen abgebildet.
+\end{itemize}
+
+\subsubsection{Kommunikation und Datenfluss}
+Das Frontend kommuniziert ausschließlich per HTTP/JSON mit dem Backend. In der Container-Umgebung dient Nginx als Reverse Proxy.
+Aufrufe auf \texttt{/api} werden an das Backend (intern \texttt{backend:8000}) weitergeleitet, während alle übrigen Requests
+als statische Frontend-Ressourcen bedient werden. Das Backend führt Validierungen durch, verarbeitet die Requests
+und persistiert Änderungen in der PostgreSQL-Datenbank.
+
+\subsubsection{Deployment mit Docker Compose}
+Für den Betrieb werden die Services über Docker Compose orchestriert:
+\begin{itemize}[leftmargin=*]
+    \item reproduzierbares Deployment über versionierte Images (Variable \texttt{VERSION})
+    \item persistente Datenhaltung über ein Docker-Volume (\texttt{se2data})
+    \item Healthchecks/Startreihenfolge: Backend startet zuverlässig, sobald die Datenbank erreichbar ist
+\end{itemize}
+
+\subsubsection{Architekturübersicht (vereinfacht)}
+\begin{center}
+\begin{tikzpicture}[
+    node distance=2.6cm,
+    box/.style={
+        draw,
+        rectangle,
+        rounded corners,
+        align=center,
+        minimum width=5.2cm,
+        minimum height=1.3cm
+    },
+    label/.style={
+        midway,
+        right,
+        align=center,
+        draw=none,
+        fill=none
+    }
+]
+
+\node[box] (browser) {Browser};
+\node[box, below of=browser] (frontend) {Frontend\\(Nginx, Port 8080)};
+\node[box, below of=frontend] (backend) {Backend\\(FastAPI, Port 8000)};
+\node[box, below of=backend] (db) {PostgreSQL\\(Port 5432, Volume)};
+
+\draw[->] (browser) -- node[label] {HTTP/HTTPS} (frontend);
+\draw[->] (frontend) -- node[label] {REST/JSON\\\texttt{/api}} (backend);
+\draw[->] (backend) -- node[label] {ORM\\(SQLAlchemy)} (db);
+
+\end{tikzpicture}
+\end{center}
+
 
 \newpage
 \section{Guides}
     \subsection{User}
+        \subsubsection{Voraussetzungen}
+            Um die Anwendung zu nutzen, benötigt der Nutzer einen Webbrowser.
+            Es sind keine speziellen Softwareinstallationen erforderlich, da die Anwendung vollständig webbasiert ist.
+
+        \subsubsection{Nutzung}
+            Im Browser muss die URL \texttt{http://IP-des-Servers:8080} aufgerufen werden, um die Anwendung zu erreichen.
+            Im Anschluss hat der Nutzer Zugriff auf die Benutzeroberfläche und kann die angebotenen Funktionen nutzen.
+
+        \subsubsection{Funktionen}
+            Die Anwendung bietet folgende Möglichkeiten:
+            \begin{itemize}[leftmargin=*]
+                \item Funktion 1: Dashboard mit Übersicht über die angelegten Reisen
+                \item Funktion 2: Neue Reise anlegen
+                \item Funktion 3: Reise bearbeiten und löschen
+                \item Funktion 4: Detailansicht einer Reise
+            \end{itemize}
+
+        \paragraph{Funktion 1: Dashboard}
+            Das Dashboard zeigt eine Übersicht über alle angelegten Reisen.
+            Es wird nicht differenziert, welcher Nutzer eine Reise angelegt hat und jeder kann alle Reisen einsehen.
+            Falls noch keine Reisen angelegt wurden, wird eine leere Ansicht mit einem Hinweistext angezeigt.
+            Sobald Reisen angelegt wurden, werden diese mit den nötigsten Informationen untereinander dargestellt.
+            Von hier aus hat der Nutzer die Möglichkeit, entweder eine Reise zu bearbeiten, zu löschen oder die Detailansicht aufzurufen, um weitere Informationen zu erhalten.
+
+        \paragraph{Funktion 2: Neue Reise anlegen}
+            Über den Button \texttt{Reise hinzufügen} in der Topbar kann eine neue Reise angelegt werden.
+            Es öffnet sich ein Formular, in dem die nötigen Informationen zur Reise eingegeben werden können (z.B. Name der Reise, Start- und Enddatum, Kosten und Beschreibung).
+            Nach dem Speichern der Reise hat der Nutzer im Anschluss die Möglichkeit, bereits einzelne Tage für die Reise anzulegen, um die Reise weiter zu detaillieren.
+            Innerhalb eines Tages können wiederum Aktivitäten angelegt werden, um den Tag weiter zu strukturieren und zu planen.
+
+        \paragraph{Funktion 3: Reise bearbeiten und löschen}
+            Über die Button-Symbole \texttt{Bearbeiten} und \texttt{Löschen} in der Übersicht die Reise bearbeitet oder gelöscht werden.
+            Beim Bearbeiten können alle Informationen der Reise angepasst werden, beim Löschen wird die Reise mit allen zugehörigen Tagen und Aktivitäten unwiderruflich gelöscht.
+
+        \paragraph{Funktion 4: Detailansicht einer Reise}
+            Über das Button-Symbol \texttt{Ansicht} in der Übersicht kann die Detailansicht einer Reise aufgerufen werden.
+            In der Detailansicht einer Reise werden alle Informationen der Reise sowie die angelegten Tage in einer Timeline dargestellt.
+
+        \subsubsection{Troubleshooting}
+            Falls die Anwendung nicht erreichbar ist, sollte zunächst geprüft werden, ob die URL korrekt eingegeben wurde und ob der Server, auf dem die Anwendung läuft, erreichbar ist.
+            Sollte die Anwendung weiterhin nicht erreichbar sein, könnte es sein, dass der Server nicht ordnungsgemäß läuft oder dass es Netzwerkprobleme gibt.
+            In diesem Fall sollte der Administrator kontaktiert werden, um das Problem zu beheben.
+            Innerhalb der Anwendung kann der Nutzer zwar falsche oder unvollständige Daten eingeben, jedoch werden diese durch Validierungen abgefangen und es wird eine Fehlermeldung angezeigt, damit der Nutzer die Eingabe korrigieren kann.
+
 
     \newpage
     \subsection{Developer}
@@ -99,7 +212,7 @@
             \begin{itemize}[leftmargin=*]
                 \item \texttt{pre-commit install}
             \end{itemize}
-        \item Damit \texttt{pytest} und weitere Python spezifische Funktionen funktionieren, sollten die Requirements aus dem Backend installiert werden:
+        \item Neben den pre-commit checks ist auch \texttt{pytest} lokal notwendig. Dazu sollten in dem Python-Environment die Requirements aus dem Backend installiert werden:
                 \begin{itemize}[leftmargin=*]
                     \item \texttt{pip install -r backend/requirements.txt}
                 \end{itemize}
@@ -156,7 +269,7 @@
             \end{itemize}
 
     \subsubsection{Tests}
-        Sobald an den Routen im Backend etwas verändert oder Neue hinzugefügt werden, muss ein passender Pytest geschrieben werden.
+        Sobald an den Routen im Backend etwas verändert oder Neue hinzugefügt wurden, muss ein passender Pytest geschrieben werden.
         Die Tests sollen einheitlich in dem Ordner \texttt{backend/tests} liegen und im Namen die zu testende Endpoint Route enthalten.
         Spätestens vor einem Pull Request müssen die Tests erfolgreich lokal durchlaufen sein, damit Fehler frühst möglich zur Behebung erkannt werden können.
         Um die Tests lokal auszuführen, kann der folgende Befehl genutzt werden:
@@ -177,22 +290,26 @@
     \subsubsection{Voraussetzungen}
         Benötigt wird ein Server bzw. eine VM mit \emph{Docker} und \emph{Docker Compose} sowie ausreichend Speicherplatz für die Daten.
         Ein minimaler Betrieb benötigt lediglich die Portfreigabe für den Port \texttt{8080} für das Frontend (UI).
-        Der Backend-Port \texttt{8000} (API) muss nur dann zusätzlich nach außen geöffnet werden, wenn die API direkt von außen über Swagger UI erreichbar sein soll (das Frontend spricht das Backend über den Nginx-Server mit \texttt{backend:8000} an).
+        Der Backend-Port \texttt{8000} (API) muss nur dann zusätzlich nach außen geöffnet werden, wenn die API direkt von außen über Swagger UI erreichbar sein soll.
+        Das Frontend ruft \texttt{/api} auf und der Nginx-Server vermittelt die Anfrage an das Backend über \texttt{backend:8000}.
 
     \subsubsection{Produktives Setup}
         Die \texttt{docker-compose.yml} wird auf den Server kopiert und eine \texttt{.env}-Datei daneben angelegt, in
         der die Konfiguration und Versionierung festlegt werden. Relevant sind insbesondere \texttt{VERSION} (Image-Tag), sowie die
-        \texttt{POSTGRES\_*}-Variablen. Besonders wichtig ist hier, dass sensible Informationen wie das Datenbankpasswort sicher gewählt werden sollen. Der Zugriff auf diesen Bereich sollte
-        demnach auch streng kontrolliert werden.
+        \texttt{POSTGRES\_*}-Variablen. Besonders wichtig ist hier, dass sensible Informationen wie das Datenbankpasswort sicher gewählt werden sollen.
+        Der Zugriff auf diesen Bereich sollte demnach auch streng kontrolliert werden.
         In einem Compose-Setup ist \texttt{POSTGRES\_HOST} typischerweise der Service-Name \texttt{db} und \texttt{POSTGRES\_PORT} ist \texttt{5432}.
 
         Über \texttt{docker compose up -d} können die Container gestartet werden. Die Datenbank hat einen Healthcheck und das Backend startet erst zuverlässig, wenn die DB als healthy markiert ist.
+        Im Anschluss ist die Anwendung über \texttt{http://IP-des-Servers:8080} erreichbar.
+        Falls es nicht gewollt ist die IP-Adresse zum Aufrufen zu nutzen, kann auch ein DNS-Eintrag auf die IP-Adresse angelegt werden.
 
     \subsubsection{Daten}
-    Die PostgreSQL-Daten liegen in dem Docker-Volume \texttt{se2data}. Dieses Volume ist der Grund, warum ein einfacher Redeploy ohne Datenverlust möglich ist. Wichtig: \texttt{docker compose down -v} löscht Volumes und damit die Daten, das sollte in Produktion nur in Ausnahmefällen und mit Backup passieren.
+    Die PostgreSQL-Daten liegen in dem Docker-Volume \texttt{se2data}. Dieses Volume ist der Grund, warum ein einfacher Redeploy ohne Datenverlust möglich ist.
+    Wichtig: \texttt{docker compose down -v} löscht Volumes und damit die Daten, das sollte in Produktion nur in Ausnahmefällen und mit Backup passieren.
 
     \subsubsection{Update}
-    Ein Update besteht im Wesentlichen daraus, die \texttt{VERSION} in der Server-\texttt{.env} zu aktualisieren und anschließend neue Images zu ziehen und die Services neu zu starten:
+    Ein Update besteht im Wesentlichen daraus, die \texttt{VERSION} in der \texttt{.env}-Datei zu aktualisieren und anschließend die Services neu zu starten:
     \begin{itemize}[leftmargin=*]
         \item \texttt{docker compose pull}
         \item \texttt{docker compose up -d}
@@ -208,6 +325,7 @@
     \end{itemize}
 
     \subsubsection{Troubleshooting}
-    Wenn das Backend die Datenbank nicht erreicht, kann es sein, dass die Containerbezeichnung für \texttt{POSTGRES\_HOST} nicht die gleiche ist wie in der \texttt{.env}-Datei. Wenn das Frontend nicht erreichbar ist, sind häufig Firewall/Portfreigaben die Ursache. Bei einem \enquote{broken} Release ist ein Rollback durch Zurücksetzen von \texttt{VERSION} und erneutes \texttt{docker compose up -d} der schnellste Weg.
+    Wenn das Backend die Datenbank nicht erreicht, kann es sein, dass der Service-Name in der docker-compose.yml nicht der gleiche ist wie die Variable \texttt{POSTGRES\_HOST} in der \texttt{.env}-Datei.
+    Wenn das Frontend nicht erreichbar ist, sind häufig Firewall/Portfreigaben die Ursache. Bei einem \enquote{broken} Release ist ein Rollback durch Zurücksetzen von \texttt{VERSION} und erneutes \texttt{docker compose up -d} der schnellste Weg.
 
 \end{document}
