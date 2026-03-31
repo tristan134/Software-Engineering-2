@@ -12,6 +12,7 @@
 \onehalfspacing
 
 \usepackage{enumitem}
+\usepackage{float}
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{subcaption}
@@ -84,7 +85,13 @@ Die Anwendung besteht aus einem Frontend (Client/Präsentation), einem Backend (
 \end{itemize}
 
 \subsubsection{Kommunikation und Datenfluss}
-Das Frontend kommuniziert ausschließlich per HTTP/JSON mit dem Backend. In der Container-Umgebung dient Nginx als Reverse Proxy.
+Das Frontend kommuniziert ausschließlich per HTTP/JSON mit dem Backend.
+Der Zugriff auf die API erfolgt über einen automatisch generierten TypeScript-Client, der aus der OpenAPI-Spezifikation des Backends abgeleitet wird.
+Die Generierung erfolgt mithilfe des OpenAPI Generators.
+Dadurch stehen im Frontend typsichere und stets konsistente Schnittstellen für Endpunkte sowie Request- und Response-Modelle zur Verfügung.
+Änderungen an der API werden so frühzeitig im Build-Prozess sichtbar.
+Der generierte Code wird nicht manuell verändert, sondern bei Anpassungen der API erneut erzeugt.
+In der Container-Umgebung dient Nginx als Reverse Proxy.
 Aufrufe auf \texttt{/api} werden an das Backend (intern \texttt{backend:8000}) weitergeleitet, während alle übrigen Requests
 als statische Frontend-Ressourcen bedient werden. Das Backend führt Validierungen durch, verarbeitet die Requests
 und persistiert Änderungen in der PostgreSQL-Datenbank.
@@ -165,7 +172,7 @@ Für den Betrieb werden die Services über Docker Compose orchestriert:
             Innerhalb eines Tages können wiederum Aktivitäten angelegt werden, um den Tag weiter zu strukturieren und zu planen.
 
         \paragraph{Funktion 3: Reise bearbeiten und löschen}
-            Über die Button-Symbole \texttt{Bearbeiten} und \texttt{Löschen} in der Übersicht die Reise bearbeitet oder gelöscht werden.
+            Über die Button-Symbole \texttt{Bearbeiten} und \texttt{Löschen} in der Übersicht kann die Reise bearbeitet oder gelöscht werden.
             Beim Bearbeiten können alle Informationen der Reise angepasst werden, beim Löschen wird die Reise mit allen zugehörigen Tagen und Aktivitäten unwiderruflich gelöscht.
 
         \paragraph{Funktion 4: Detailansicht einer Reise}
@@ -221,7 +228,7 @@ Für den Betrieb werden die Services über Docker Compose orchestriert:
     \subsubsection{Entwicklung}
         Der Code liegt getrennt in \texttt{backend/} und \texttt{frontend/}. Um die Anwendung lokal zu starten existiert
         \texttt{docker-compose.local.yml}, das die Services direkt aus dem Quellcode baut. Für den produktiven Betrieb gibt
-        es \texttt{docker-compose.yml}, welche die Images aus der Github-Registry lädt und über die Variable \texttt{VERSION} pinnt.
+        es \texttt{docker-compose.yml}, welche die Images aus der Github-Container-Registry lädt und über die Variable \texttt{VERSION} pinnt.
 
         \paragraph{Lokales Setup}
             Am einfachsten ist es, lokal immer über Compose zu arbeiten. Dazu soll im Projektroot eine \texttt{.env}-Datei angelegt
@@ -241,7 +248,57 @@ Für den Betrieb werden die Services über Docker Compose orchestriert:
                 \item \texttt{npm install}
                 \item \texttt{npm run dev}
             \end{enumerate}
-    
+
+        \paragraph{Codestruktur}
+        Der Quellcode ist strikt in \texttt{backend/} und \texttt{frontend/} getrennt.
+        Beide Bereiche sind so aufgebaut, dass neue Features konsistent ergänzt werden können.
+
+        \subparagraph{Backend (\texttt{backend/})}
+        Das Backend ist als FastAPI-Anwendung strukturiert, wobei sich der Anwendungscode unter \texttt{backend/app/} befindet.
+        Der Einstiegspunkt ist \texttt{app/app.py}, in dem die Anwendung initialisiert sowie Middleware und Router registriert werden.
+        Die eigentliche API-Schicht liegt unter \texttt{app/api/}, wo insbesondere die Versionierung und die einzelnen Endpoints organisiert sind.
+        Datenbankzugriff und Datenstrukturen sind in \texttt{app/db/} gebündelt.
+        Hier befinden sich sowohl die Konfiguration und Session-Verwaltung als auch die SQLAlchemy-Modelle und die dazugehörigen Pydantic-Schemas.
+        Tests werden getrennt vom Anwendungscode unter \texttt{backend/tests/} gehalten und mit Pytest umgesetzt.
+        Bei Erweiterungen des Backends wird entlang dieser Struktur gearbeitet:\\
+        \newline
+        Neue Endpoints werden entweder als eigene Dateien unter \texttt{app/api/v1/endpoints/} angelegt oder in bestehende Ressourcen integriert und anschließend in der zentralen Router-Registrierung eingebunden.
+        Für neue oder geänderte Payloads werden entsprechende Pydantic-Schemas definiert, sodass Validierung und OpenAPI-Dokumentation konsistent bleiben.
+        Änderungen an der Persistenz erfolgen über die SQLAlchemy-Modelle und werden stets gemeinsam mit den zugehörigen Schemas umgesetzt.
+        Für jede neue Funktionalität oder relevante Änderung wird ein Unit-Test unter \texttt{backend/tests/} ergänzt.
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.4\textwidth]{backend}
+            \caption{Codestruktur des frontends}
+            \label{fig:backendstruktur}
+        \end{figure}
+
+
+        \subparagraph{Frontend (\texttt{frontend/})}
+        Das Frontend ist als Vite-basiertes JavaScript-Projekt organisiert und liegt unter \texttt{frontend/src/}.
+        Der Einstiegspunkt der Anwendung ist \texttt{src/main.js}.
+        Die eigentliche Struktur folgt einem seitenbasierten Ansatz.
+        Unter \texttt{src/pages/} befinden sich die einzelnen Views, die jeweils Rendering und zugehörige API-Aufrufe kapseln.
+        Gemeinsame Funktionalität wie Layout oder Initialisierung ist in \texttt{src/pages/base.js} gebündelt, um Wiederverwendung zu fördern und Duplikation zu vermeiden.\\
+        \newline
+        Der Zugriff auf das Backend erfolgt über einen generierten API-Client unter \texttt{src/generated/}, der aus der OpenAPI-Spezifikation erzeugt wird und nicht manuell angepasst wird.
+        Änderungen an der API werden daher durch eine erneute Generierung dieses Clients in das Frontend übernommen.
+        Die Styles sind unter \texttt{src/css/} organisiert und nach Verantwortungsbereich getrennt:\\
+        \newline
+        Globale Design-Definitionen befinden sich in \texttt{root.css}, wiederverwendbare Hilfsklassen in \texttt{utilities.css}, und seiten- bzw. feature-spezifische Styles in jeweils eigenen CSS-Dateien.
+        Bei Erweiterungen des Frontends werden neue Seiten unter \texttt{src/pages/} angelegt und in die bestehende Navigation integriert.
+        Gemeinsame Logik wird dabei bewusst in \texttt{base.js} zentralisiert.\\
+        \newline
+        Änderungen an Backend-Endpunkten oder Datenmodellen erfordern eine erneute Generierung des OpenAPI-Clients, gefolgt von einer Anpassung der betroffenen Seiten an die aktualisierten Typen und Methoden.
+        Anpassungen am Styling werden entsprechend ihrer Reichweite entweder global, als Utility oder seiten-spezifisch umgesetzt.
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.4\textwidth]{frontend}
+            \caption{Codestruktur des frontends}
+            \label{fig:frontendstruktur}
+        \end{figure}
+
+
         \paragraph{Git-Workflows}
             Änderungen passieren in Feature-Branches und werden dann über Pull Requests auf den \texttt{main}-Branch gemerged.
             Auf den \texttt{main} wird \textbf{nicht} force-gepusht. Zusätzlich gilt, dass Commits signiert werden sollen
@@ -250,12 +307,18 @@ Für den Betrieb werden die Services über Docker Compose orchestriert:
             Bei jedem Pull Request laufen automatisch die GitHub Workflows und Tests durch.
             Zudem muss jeder Pull Request von mindestens einem anderen Teammitglied reviewed und freigegeben werden.
             Erst wenn alle Checks erfolgreich sind, können die Änderungen über den Pull Request in den \texttt{main}-Branch gemerged werden.
+            \begin{figure}[H]
+                \centering
+                \includegraphics[width=0.4\textwidth]{workflows}
+                \caption{Github Workflows}
+                \label{fig:workflows}
+            \end{figure}
 
         \paragraph{Versionierung}
             In \texttt{docker-compose.yml} werden produktive Images über \break \texttt{ghcr.io/...:\$\{VERSION\}} referenziert.
             Als Konvention entspricht \texttt{VERSION} einem Git-Tag (z.B. \texttt{v1.0.0}). Sobald ein neues Feature fertig ist
             und der Pull Request durchgelaufen ist, soll ein neues Tag auf dem \texttt{main}-Branch erstellt und gepusht werden, damit die neue Version in Produktivsystemen deployt werden kann.
-            Dazu läuft automatisch eine Action an, die Images aus dem Quellcode baut und in die Github-Registry pusht.
+            Dazu läuft automatisch eine Action an, die Images aus dem Quellcode baut und in die Github-Container-Registry pusht.
     
             Folgende Tag-Konventionen ist für die Versionierung vorgesehen:
             \begin{itemize}[leftmargin=*]
