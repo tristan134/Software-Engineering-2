@@ -392,16 +392,14 @@ export function renderNewJourney({ mount }) {
 			});
 
 			const submitBtn = dayForm.querySelector("button[type='submit']");
-			submitBtn.disabled = false;
+			submitBtn.disabled = !isEditingDay;
 			submitBtn.textContent = isEditingDay
 				? "Änderungen speichern"
 				: "Tag speichern";
 
 			setStatus(
 				dayStatusEl,
-				isEditingDay
-					? "Bearbeitungsmodus aktiv."
-					: "Bearbeitungsmodus beendet.",
+				isEditingDay ? "Bearbeitungsmodus aktiv." : "",
 				isEditingDay ? "loading" : "",
 			);
 		});
