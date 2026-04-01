@@ -4,6 +4,8 @@ import { apiUrl } from "../apiBase";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function parseISODateOnlyToUTC(dateStr) {
+	// Backend liefert Datum meist als ISO-String. Für Tagesdifferenzen ist UTC stabiler,
+	// sonst rutscht es je nach Zeitzone gerne um einen Tag.
 	if (!dateStr || typeof dateStr !== "string") return null;
 	const dateOnly = dateStr.includes("T") ? dateStr.split("T")[0] : dateStr;
 	const m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(dateOnly);
@@ -27,6 +29,7 @@ function diffCalendarDaysUTC(a, b) {
 }
 
 function getJourneyDayNumber({ journeyStartDate, dayDate }) {
+	// Tag 1 = Startdatum, Tag 2 = Startdatum + 1 Tag, ...
 	const start = parseISODateOnlyToUTC(journeyStartDate);
 	const day = parseISODateOnlyToUTC(dayDate);
 	if (!start || !day) return null;
@@ -71,6 +74,7 @@ export async function renderFullJourney({ mount }) {
 
 		const journey = await res.json();
 
+		// Für die Timeline sortieren wir im Frontend nach Datum.
 		journey.days.sort((a, b) => new Date(a.date) - new Date(b.date));
 
 		mount.innerHTML = `

@@ -7,7 +7,6 @@ export function renderNewJourney({ mount }) {
       <h1>Reise anlegen</h1>
       <p class="text-muted mb-md">Lege zuerst die Reise an, dann füge Tage & Aktivitäten hinzu.</p>
 
-      <!-- Journey Details -->
       <form id="newJourneyForm" class="card mb-lg">
         <div class="card-header">Reisedetails</div>
 
@@ -44,7 +43,6 @@ export function renderNewJourney({ mount }) {
         </div>
       </form>
 
-      <!-- Days + Activities (initially locked) -->
       <div class="card" id="daysCard" style="display:none;">
         <div class="actions mb-md">
           <div>
@@ -118,7 +116,7 @@ export function renderNewJourney({ mount }) {
 
 	function parseDateInputValueToUtcMidnight(value) {
 		// input[type=date] liefert YYYY-MM-DD ohne Zeitzone.
-		// Wir parsen explizit als UTC-Mitternacht, damit Offsets stabil bleiben.
+		// Wir parsen explizit als UTC-Mitternacht.
 		if (!value || typeof value !== "string") return null;
 		const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 		if (!m) return null;
@@ -160,7 +158,6 @@ export function renderNewJourney({ mount }) {
         </div>
 
 
-        <!-- Day create form -->
         <form data-day-form="${localId}" class="mb-md">
           <div class="flex gap-md" style="flex-wrap: wrap;">
             <div class="form-group" style="flex:1; min-width: 180px;">
@@ -179,7 +176,6 @@ export function renderNewJourney({ mount }) {
           </div>
         </form>
 
-        <!-- Activity create form (hidden until day saved) -->
         <form data-activity-form="${localId}" style="display:none;" class="mb-md">
           <div class="form-group">
             <label class="label">Aktivität *</label>
@@ -320,7 +316,6 @@ export function renderNewJourney({ mount }) {
 
 			dayTitleEl.textContent = `Tag ${dayNumber}`;
 
-			// Optional: Range-Hinweis, falls Datum außerhalb der Reise liegt.
 			const endDate = parseDateInputValueToUtcMidnight(end);
 			const dayDateUtc = parseDateInputValueToUtcMidnight(dayDate);
 			const startUtc = parseDateInputValueToUtcMidnight(start);
@@ -397,16 +392,14 @@ export function renderNewJourney({ mount }) {
 			});
 
 			const submitBtn = dayForm.querySelector("button[type='submit']");
-			submitBtn.disabled = false;
+			submitBtn.disabled = !isEditingDay;
 			submitBtn.textContent = isEditingDay
 				? "Änderungen speichern"
 				: "Tag speichern";
 
 			setStatus(
 				dayStatusEl,
-				isEditingDay
-					? "Bearbeitungsmodus aktiv."
-					: "Bearbeitungsmodus beendet.",
+				isEditingDay ? "Bearbeitungsmodus aktiv." : "",
 				isEditingDay ? "loading" : "",
 			);
 		});

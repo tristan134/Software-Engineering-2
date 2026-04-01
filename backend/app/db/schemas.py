@@ -6,7 +6,7 @@ from decimal import Decimal
 
 
 # =========================================================
-# JOURNEY
+# JOURNEY (Reise)
 # =========================================================
 
 
@@ -40,7 +40,7 @@ class Journey(JourneyBase):
 class ShowJourneySummarize(JourneyBase):
     id: int
 
-    # formatting price
+    # Preisformatierung
     @field_serializer("price")
     def serialize_price(self, v: Optional[Decimal]):
         if v is None:
@@ -48,9 +48,9 @@ class ShowJourneySummarize(JourneyBase):
         return float(v)
 
 
-# ---------------------------------------------------------
-# DAY
-# ---------------------------------------------------------
+# =========================================================
+# DAY (Tag)
+# =========================================================
 
 
 class DayBase(BaseModel):
@@ -75,9 +75,9 @@ class Day(DayBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-# ---------------------------------------------------------
-# ACTIVITY
-# ---------------------------------------------------------
+# =========================================================
+# ACTIVITY (Aktivität)
+# =========================================================
 
 
 class ActivityBase(BaseModel):
