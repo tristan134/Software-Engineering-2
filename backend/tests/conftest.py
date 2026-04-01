@@ -2,12 +2,16 @@ import os
 from typing import Generator
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.app import app
 from app.db.session import Base, get_db
+
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
 
 
 @pytest.fixture(scope="session")
@@ -43,9 +47,9 @@ def db_session(test_engine) -> Generator[Session, None, None]:
 def client(db_session: Session, test_engine) -> Generator[TestClient, None, None]:
     """FastAPI TestClient mit überschriebenem get_db Dependency.
 
-    Wichtig: Wir deaktivieren das Produktiv-Startup, das sonst versucht, Postgres
-    (host "db") zu erreichen. Tabellen werden stattdessen auf der Test-Engine
-    erzeugt.
+    In der App wird das Schema im `lifespan` erzeugt (prod Engine).
+    Für Tests überschreiben wir den Lifespan-Kontext, damit keine Verbindung zur
+    Produktiv-DB aufgebaut wird und stattdessen die Test-Engine genutzt wird.
     """
 
     def _override_get_db():
@@ -53,16 +57,20 @@ def client(db_session: Session, test_engine) -> Generator[TestClient, None, None
 
     app.dependency_overrides[get_db] = _override_get_db
 
-    # Startup-Handler, der Postgres-Engine verwendet, für Tests entfernen.
-    original_startup_handlers = list(app.router.on_startup)
-    app.router.on_startup.clear()
+    # Lifespan überschreiben, damit keine prod Engine genutzt wird.
+    original_lifespan_context = getattr(app.router, "lifespan_context", None)
 
-    # Schema sicherstellen (idempotent) auf Test-Engine
-    Base.metadata.create_all(bind=test_engine)
+    @asynccontextmanager
+    async def _test_lifespan(_: FastAPI) -> AsyncIterator[None]:
+        Base.metadata.create_all(bind=test_engine)
+        yield
+
+    app.router.lifespan_context = _test_lifespan
 
     try:
         with TestClient(app) as c:
             yield c
     finally:
-        app.router.on_startup[:] = original_startup_handlers
+        if original_lifespan_context is not None:
+            app.router.lifespan_context = original_lifespan_context
         app.dependency_overrides.clear()

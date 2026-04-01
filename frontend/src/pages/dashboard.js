@@ -43,9 +43,15 @@ async function loadJourneys() {
             <p><strong>Ende:</strong> ${new Date(j.end_date).toLocaleDateString()}</p>
             
             <div>
-                <button class = "btn" onclick="deleteJourney(${j.id})">🗑️</button>
-                <button class = "btn" onclick="showFullJourney(${j.id})">👀</button>
-                <button class = "btn" onclick="editJourney(${j.id})">Bearbeiten</button>
+                <button class = "btn" onclick="deleteJourney(${
+									j.id
+								})"><i class="fa-solid fa-trash"></i></button>
+                <button class = "btn" onclick="showFullJourney(${
+									j.id
+								})"><i class="fa-solid fa-eye"></i></button>
+                <button class = "btn" onclick="editJourney(${
+									j.id
+								})"><i class="fa-solid fa-pen-to-square"></i></button>
             </div>
           </div>
         </div>

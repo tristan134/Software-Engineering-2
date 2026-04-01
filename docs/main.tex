@@ -1,0 +1,400 @@
+\documentclass[12pt,a4paper]{article}
+% Encoding, language, fonts
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage{lmodern}
+\usepackage{csquotes}
+% Page geometry and spacing
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{comment}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{adjustbox}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{minted}
+\usepackage{tikz}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black
+}
+\setlength{\parindent}{0pt}
+
+% Title info
+\onehalfspacing
+\title{\textbf{Journeo - Bedienungsanleitung}}
+\date{}
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\onehalfspacing
+
+\begin{center}
+    \begin{tabular}{@{}ll@{}}
+        \textbf{Autoren:} & Tristan Häß, Robin Schiffmacher\\[1cm]
+        \textbf{Kurs:}         & TINF23CS2 \\[1cm]
+        \textbf{Veranstaltung:}& Advanced Software Engineering \\[1cm]
+        \textbf{Dozent:}       & Philipp Fruck \\[1cm]
+        \textbf{Institution:}  & DHBW Mannheim \\[1cm]
+    \end{tabular}
+\end{center}
+
+\newpage
+\tableofcontents
+
+\newpage
+\setcounter{page}{1}
+
+\section{Journeo}
+\subsection{Überblick}
+Journeo ist eine webbasierte Anwendung, die es Nutzern ermöglicht, ihre Reisen zu planen und zu organisieren.
+Die Anwendung bietet Funktionen wie das Anlegen von Reisen, die Verwaltung von Reisedetails und die Planung.
+Die Zielgruppe von Journeo sind Privatpersonen und Reisebegeisterte, die ihre Reisen effizient und übersichtlich planen möchten.
+Die Anwendung ist so konzipiert, dass sie einfach zu bedienen ist und eine intuitive Benutzeroberfläche bietet, um die Verwaltung von Reisen zu erleichtern.
+
+
+
+\subsection{Architektur}
+Journeo ist als klassische 3-Schichten-Webanwendung umgesetzt und wird containerisiert betrieben.
+Die Anwendung besteht aus einem Frontend (Client/Präsentation), einem Backend (Logik/REST-API) und einer relationalen Datenbank (Persistenz).
+
+\subsubsection{Komponenten}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Frontend (UI):} Statische Webanwendung (Vite/JavaScript), die dem Nutzer die Benutzeroberfläche bereitstellt.
+          In Produktion wird das Frontend über einen Nginx-Webserver ausgeliefert.
+    \item \textbf{Backend (API):} Python-Webservice (FastAPI), der die fachliche Logik kapselt und eine REST-API bereitstellt
+          (u.a. für Reisen, Tage und Aktivitäten).
+          Die API ist versioniert (\texttt{/api/v1/...}).
+    \item \textbf{Datenbank:} PostgreSQL als persistente Datenhaltung.
+          Das Backend greift über ein ORM (SQLAlchemy) auf die Daten zu. Das Schema wird in Modellen abgebildet.
+\end{itemize}
+
+\subsubsection{Kommunikation und Datenfluss}
+Das Frontend kommuniziert ausschließlich per HTTP/JSON mit dem Backend.
+Der Zugriff auf die API erfolgt über einen automatisch generierten TypeScript-Client, der aus der OpenAPI-Spezifikation des Backends abgeleitet wird.
+Die Generierung erfolgt mithilfe des OpenAPI Generators.
+Dadurch stehen im Frontend typsichere und stets konsistente Schnittstellen für Endpunkte sowie Request- und Response-Modelle zur Verfügung.
+Änderungen an der API werden so frühzeitig im Build-Prozess sichtbar.
+Der generierte Code wird nicht manuell verändert, sondern bei Anpassungen der API erneut erzeugt.
+In der Container-Umgebung dient Nginx als Reverse Proxy.
+Aufrufe auf \texttt{/api} werden an das Backend (intern \texttt{backend:8000}) weitergeleitet, während alle übrigen Requests
+als statische Frontend-Ressourcen bedient werden. Das Backend führt Validierungen durch, verarbeitet die Requests
+und persistiert Änderungen in der PostgreSQL-Datenbank.
+
+\subsubsection{Deployment mit Docker Compose}
+Für den Betrieb werden die Services über Docker Compose orchestriert:
+\begin{itemize}[leftmargin=*]
+    \item reproduzierbares Deployment über versionierte Images (Variable \texttt{VERSION})
+    \item persistente Datenhaltung über ein Docker-Volume (\texttt{se2data})
+    \item Healthchecks/Startreihenfolge: Backend startet zuverlässig, sobald die Datenbank erreichbar ist
+\end{itemize}
+
+\subsubsection{Architekturübersicht (vereinfacht)}
+\begin{center}
+\begin{tikzpicture}[
+    node distance=2.6cm,
+    box/.style={
+        draw,
+        rectangle,
+        rounded corners,
+        align=center,
+        minimum width=5.2cm,
+        minimum height=1.3cm
+    },
+    label/.style={
+        midway,
+        right,
+        align=center,
+        draw=none,
+        fill=none
+    }
+]
+
+\node[box] (browser) {Browser};
+\node[box, below of=browser] (frontend) {Frontend\\(Nginx, Port 8080)};
+\node[box, below of=frontend] (backend) {Backend\\(FastAPI, Port 8000)};
+\node[box, below of=backend] (db) {PostgreSQL\\(Port 5432, Volume)};
+
+\draw[->] (browser) -- node[label] {HTTP} (frontend);
+\draw[->] (frontend) -- node[label] {REST/JSON\\\texttt{/api}} (backend);
+\draw[->] (backend) -- node[label] {ORM\\(SQLAlchemy)} (db);
+
+\end{tikzpicture}
+\end{center}
+
+
+\newpage
+\section{Guides}
+    \subsection{User}
+        \subsubsection{Voraussetzungen}
+            Um die Anwendung zu nutzen, benötigt der Nutzer einen Webbrowser.
+            Es sind keine speziellen Softwareinstallationen erforderlich, da die Anwendung vollständig webbasiert ist.
+
+        \subsubsection{Nutzung}
+            Im Browser muss die URL \texttt{http://IP-des-Servers:8080} aufgerufen werden, um die Anwendung zu erreichen.
+            Im Anschluss hat der Nutzer Zugriff auf die Benutzeroberfläche und kann die angebotenen Funktionen nutzen.
+
+        \subsubsection{Funktionen}
+            Die Anwendung bietet folgende Möglichkeiten:
+            \begin{itemize}[leftmargin=*]
+                \item Funktion 1: Dashboard mit Übersicht über die angelegten Reisen
+                \item Funktion 2: Neue Reise anlegen
+                \item Funktion 3: Reise bearbeiten und löschen
+                \item Funktion 4: Detailansicht einer Reise
+            \end{itemize}
+
+        \paragraph{Funktion 1: Dashboard}
+            Das Dashboard zeigt eine Übersicht über alle angelegten Reisen.
+            Es wird nicht differenziert, welcher Nutzer eine Reise angelegt hat und jeder kann alle Reisen einsehen.
+            Falls noch keine Reisen angelegt wurden, wird eine leere Ansicht mit einem Hinweistext angezeigt.
+            Sobald Reisen angelegt wurden, werden diese mit den nötigsten Informationen untereinander dargestellt.
+            Von hier aus hat der Nutzer die Möglichkeit, entweder eine Reise zu bearbeiten, zu löschen oder die Detailansicht aufzurufen, um weitere Informationen zu erhalten.
+
+        \paragraph{Funktion 2: Neue Reise anlegen}
+            Über den Button \texttt{Reise hinzufügen} in der Topbar kann eine neue Reise angelegt werden.
+            Es öffnet sich ein Formular, in dem die nötigen Informationen zur Reise eingegeben werden können (z.B. Name der Reise, Start- und Enddatum, Kosten und Beschreibung).
+            Nach dem Speichern der Reise hat der Nutzer im Anschluss die Möglichkeit, bereits einzelne Tage für die Reise anzulegen, um die Reise weiter zu detaillieren.
+            Innerhalb eines Tages können wiederum Aktivitäten angelegt werden, um den Tag weiter zu strukturieren und zu planen.
+
+        \paragraph{Funktion 3: Reise bearbeiten und löschen}
+            Über die Button-Symbole \texttt{Bearbeiten} und \texttt{Löschen} in der Übersicht kann die Reise bearbeitet oder gelöscht werden.
+            Beim Bearbeiten können alle Informationen der Reise angepasst werden, beim Löschen wird die Reise mit allen zugehörigen Tagen und Aktivitäten unwiderruflich gelöscht.
+
+        \paragraph{Funktion 4: Detailansicht einer Reise}
+            Über das Button-Symbol \texttt{Ansicht} in der Übersicht kann die Detailansicht einer Reise aufgerufen werden.
+            In der Detailansicht einer Reise werden alle Informationen der Reise sowie die angelegten Tage in einer Timeline dargestellt.
+
+        \subsubsection{Troubleshooting}
+            Falls die Anwendung nicht erreichbar ist, sollte zunächst geprüft werden, ob die URL korrekt eingegeben wurde und ob der Server, auf dem die Anwendung läuft, erreichbar ist.
+            Sollte die Anwendung weiterhin nicht erreichbar sein, könnte es sein, dass der Server nicht ordnungsgemäß läuft oder dass es Netzwerkprobleme gibt.
+            In diesem Fall sollte der Administrator kontaktiert werden, um das Problem zu beheben.
+            Innerhalb der Anwendung kann der Nutzer zwar falsche oder unvollständige Daten eingeben, jedoch werden diese durch Validierungen abgefangen und es wird eine Fehlermeldung angezeigt, damit der Nutzer die Eingabe korrigieren kann.
+
+
+    \newpage
+    \subsection{Developer}
+    \subsubsection{Voraussetzungen}
+        Um am Projekt mitzuarbeiten, braucht man eine übliche Development-Umgebung mit Git sowie Docker.
+        Die Anwendung ist so konzipiert, dass eine lokale Entwicklung möglich ist, bei der alle Komponenten
+        (Datenbank, Backend, Frontend) über Docker Compose gestartet werden können.
+        Folgende Voraussetzungen sollten auf dem System installiert sein:
+        \begin{itemize}[leftmargin=*]
+            \item Git
+            \item Docker \& Docker Compose
+            \item Node.js \& npm
+            \item Python
+        \end{itemize}
+
+        Zu Beginn muss das Repository von GitHub geklont und in den Projektordner gewechselt werden:
+        \begin{enumerate}
+            \item \texttt{git clone https://github.com/tristan134/Software-Engineering-2.git}
+            \item \texttt{cd Software-Engineering-2}
+        \end{enumerate}
+
+    \subsubsection{Installationen}
+        Für die Installationen ist es sinnvoll, ein dediziertes virtuelles Python-Environment zu nutzen, damit die Dependencies isoliert sind.
+
+    \begin{enumerate}
+        \item \texttt{pre-commit} ist verpflichtend und wird lokal installiert. Empfohlen ist die Installation über \texttt{pip}:
+            \begin{itemize}[leftmargin=*]
+                \item \texttt{pip install pre-commit}
+            \end{itemize}
+            Danach sollte \texttt{pre-commit} im Repository initialisiert werden, damit die Hooks bei jedem Commit automatisch
+            laufen:
+            \begin{itemize}[leftmargin=*]
+                \item \texttt{pre-commit install}
+            \end{itemize}
+        \item Neben den pre-commit checks ist auch \texttt{pytest} lokal notwendig. Dazu sollten in dem Python-Environment die Requirements aus dem Backend installiert werden:
+                \begin{itemize}[leftmargin=*]
+                    \item \texttt{pip install -r backend/requirements.txt}
+                \end{itemize}
+    \end{enumerate}
+
+    \subsubsection{Entwicklung}
+        Der Code liegt getrennt in \texttt{backend/} und \texttt{frontend/}. Um die Anwendung lokal zu starten existiert
+        \texttt{docker-compose.local.yml}, das die Services direkt aus dem Quellcode baut. Für den produktiven Betrieb gibt
+        es \texttt{docker-compose.yml}, welche die Images aus der Github-Container-Registry lädt und über die Variable \texttt{VERSION} pinnt.
+
+        \paragraph{Lokales Setup}
+            Am einfachsten ist es, lokal immer über Compose zu arbeiten. Dazu soll im Projektroot eine \texttt{.env}-Datei angelegt
+            und die benötigten Variablen eingetragen werden (insbesondere \texttt{POSTGRES\_VERSION}, \texttt{POSTGRES\_USER},
+            \texttt{POSTGRES\_PASSWORD}, \texttt{POSTGRES\_DB}, \texttt{POSTGRES\_HOST}, \texttt{POSTGRES\_PORT}). Danach kann die Umgebung gebaut werden:
+            \begin{itemize}[leftmargin=*]
+                \item \texttt{docker compose -f docker-compose.local.yml up \textendash\textendash build}
+            \end{itemize}
+            Wenn alles läuft, ist das Backend unter \texttt{http://localhost:8000} erreichbar und das Frontend
+            unter \texttt{http://localhost:8080}.
+
+        \paragraph{Frontend lokal entwickeln}
+            Für schnelleres Feedback kann das Frontend auch unabhängig vom Docker-Container als npm-Dev-Server gestartet werden.
+            Dazu müssen zuerst die frontend-Dependencies installiert und danach der Dev-Server gestartet werden:
+            \begin{enumerate}[leftmargin=*]
+                \item \texttt{cd frontend}
+                \item \texttt{npm install}
+                \item \texttt{npm run dev}
+            \end{enumerate}
+
+        \paragraph{Codestruktur}
+        Der Quellcode ist strikt in \texttt{backend/} und \texttt{frontend/} getrennt.
+        Beide Bereiche sind so aufgebaut, dass neue Features konsistent ergänzt werden können.
+        \newline
+        \newline
+        Das Backend (\texttt{backend/}, siehe \autoref{fig:backendstruktur}) ist als FastAPI-Anwendung strukturiert, wobei sich der Anwendungscode unter \texttt{backend/app/} befindet.
+        Der Einstiegspunkt ist \texttt{app/app.py}, in dem die Anwendung initialisiert sowie Middleware und Router registriert werden.
+        Die eigentliche API-Schicht liegt unter \texttt{app/api/}, wo insbesondere die Versionierung und die einzelnen Endpoints organisiert sind.
+        Datenbankzugriff und Datenstrukturen sind in \texttt{app/db/} gebündelt.
+        Hier befinden sich sowohl die Konfiguration und Session-Verwaltung als auch die SQLAlchemy-Modelle und die dazugehörigen Pydantic-Schemas.
+        Tests werden getrennt vom Anwendungscode unter \texttt{backend/tests/} gehalten und mit Pytest umgesetzt.
+        Bei Erweiterungen des Backends wird entlang dieser Struktur gearbeitet:\\
+        \newline
+        Neue Endpoints werden entweder als eigene Dateien unter \texttt{app/api/v1/endpoints/} angelegt oder in bestehende Ressourcen integriert und anschließend in der zentralen Router-Registrierung eingebunden.
+        Für neue oder geänderte Payloads werden entsprechende Py-\break dantic-Schemas definiert, sodass Validierung und OpenAPI-Dokumentation konsistent bleiben.
+        Änderungen an der Persistenz erfolgen über die SQLAlchemy-Modelle und werden stets gemeinsam mit den zugehörigen Schemas umgesetzt.
+        Für jede neue Funktionalität oder relevante Änderung wird ein Unit-Test unter \texttt{backend/tests/} ergänzt.
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.4\textwidth]{backend}
+            \caption{Codestruktur des backends}
+            \label{fig:backendstruktur}
+        \end{figure}
+
+        Das Frontend (\texttt{frontend/}, siehe \autoref{fig:frontendstruktur}) ist als Vite-basiertes JavaScript-Projekt organisiert und liegt unter \texttt{frontend/src/}.
+        Der Einstiegspunkt der Anwendung ist \newline \texttt{src/main.js}. Die eigentliche Struktur folgt einem seitenbasierten Ansatz.
+        Unter \texttt{src/pages/} befinden sich die einzelnen Views, die jeweils Rendering und zugehörige API-Aufrufe kapseln.
+        Gemeinsame Funktionalität wie Layout oder Initialisierung ist in \texttt{src/pages/base.js} gebündelt, um Wiederverwendung zu fördern und Duplikation zu vermeiden.\\
+        \newline
+        Der Zugriff auf das Backend erfolgt über einen generierten API-Client unter\newline\texttt{src/generated/}, der aus der OpenAPI-Spezifikation erzeugt wird und nicht manuell angepasst wird.
+        Änderungen an der API werden daher durch eine erneute Generierung dieses Clients in das Frontend übernommen.\\
+        \newline
+        Die Styles sind unter \texttt{src/css/} organisiert und nach Verantwortungsbereich getrennt.
+        Globale Design-Definitionen befinden sich in \texttt{root.css}, wiederverwendbare Hilfsklassen in \texttt{utilities.css}, und seiten- bzw. feature-spezifische Styles in jeweils eigenen CSS-Dateien.
+        \newline
+        Bei Erweiterungen des Frontends werden neue Seiten unter \texttt{src/pages/} angelegt und in die bestehende Navigation integriert.
+        Gemeinsame Logik wird dabei bewusst in \texttt{base.js} zentralisiert.
+        \newline
+        Änderungen an Backend-Endpunkten oder Datenmodellen erfordern eine erneute Generierung des OpenAPI-Clients, gefolgt von einer Anpassung der betroffenen Seiten an die aktualisierten Typen und Methoden.
+        Anpassungen am Styling werden entsprechend ihrer Reichweite entweder global, als Utility oder seiten-spezifisch umgesetzt.
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=0.4\textwidth]{frontend}
+            \caption{Codestruktur des frontends}
+            \label{fig:frontendstruktur}
+        \end{figure}
+
+
+        \paragraph{Git-Workflows}
+            Änderungen passieren in Feature-Branches und werden dann über Pull Requests auf den \texttt{main}-Branch gemerged.
+            Auf den \texttt{main} wird \textbf{nicht} force-gepusht. Zusätzlich gilt, dass Commits signiert werden sollen
+            (Git commit signing via GPG oder SSH), damit die Herkunft der Änderungen nachvollziehbar ist.
+
+            Bei jedem Pull Request laufen automatisch die GitHub Workflows und Tests durch (siehe \autoref{fig:workflows}).
+            Zudem muss jeder Pull Request von mindestens einem anderen Teammitglied reviewed und freigegeben werden.
+            Erst wenn alle Checks erfolgreich sind, können die Änderungen über den Pull Request in den \texttt{main}-Branch gemerged werden.
+            \begin{figure}[H]
+                \centering
+                \includegraphics[width=0.4\textwidth]{workflows}
+                \caption{Github Workflows}
+                \label{fig:workflows}
+            \end{figure}
+
+        \paragraph{Versionierung}
+            In \texttt{docker-compose.yml} werden produktive Images über \break \texttt{ghcr.io/...:\$\{VERSION\}} referenziert.
+            Als Konvention entspricht \texttt{VERSION} einem Git-Tag (z.B. \texttt{v1.0.0}). Folgende Tag-Konventionen ist für die Versionierung vorgesehen:
+            \begin{itemize}[leftmargin=*]
+                \item \texttt{vX.Y.Z}
+            \end{itemize}
+            Zu den Bedeutungen der einzelnen Stellen:
+            \begin{itemize}[leftmargin=*]
+                \item \texttt{X}: Major-Version, z.B. bei Breaking Changes
+                \item \texttt{Y}: Minor-Version, z.B. bei neuen Features ohne Breaking Changes
+                \item \texttt{Z}: Patch-Version, z.B. bei Bugfixes
+            \end{itemize}
+
+            Sobald ein neues Feature fertig ist
+            und der Pull Request durchgelaufen ist, soll ein neues Tag auf dem \texttt{main}-Branch erstellt und gepusht werden, damit die neue Version in Produktivsystemen deployt werden kann:
+            \begin{enumerate}
+                \item git checkout main
+                \item git pull
+                \item git tag vX.Y.Z
+                \item git push origin vX.Y.Z
+            \end{enumerate}
+            Dazu läuft automatisch eine Action an, die Images aus dem Quellcode baut und in die Github-Container-Registry pusht.
+    
+
+
+    \subsubsection{Tests}
+        Sobald an den Routen im Backend etwas verändert oder Neue hinzugefügt wurden, muss ein passender Pytest geschrieben werden.
+        Die Tests sollen einheitlich in dem Ordner \texttt{backend/tests} liegen und im Namen die zu testende Endpoint Route enthalten.
+        Spätestens vor einem Pull Request müssen die Tests erfolgreich lokal durchlaufen sein, damit Fehler frühst möglich zur Behebung erkannt werden können.
+        Um die Tests lokal auszuführen, kann der folgende Befehl genutzt werden:
+        \begin{itemize}[leftmargin=*]
+            \item \texttt{cd backend/tests \&\& pytest}
+        \end{itemize}
+
+    \subsubsection{Troubleshooting}
+        Wenn die Datenbank nicht startet, sind es fast immer fehlende bzw. inkonsistente \break \texttt{POSTGRES\_*}-Variablen oder ein
+        kaputter Volume-Zustand. In letzter Konsequenz hilft \texttt{docker compose -f docker-compose.local.yml down -v} (Achtung: löscht Volumes und damit lokale Daten!).
+        Wenn die benötigten Ports belegt sind, ist selbstständig zu prüfen, ob \texttt{8000} (Backend) oder \texttt{8080} (Frontend) bereits von anderen Diensten auf dem Computer verwendet werden.
+\newpage
+\subsection{Admin}
+        Der produktive Betrieb ist containerbasiert und wird über \texttt{docker-compose.yml} beschrieben. Im Gegensatz zur
+        lokalen Entwicklung wird in Produktion nicht aus dem Quellcode gebaut, sondern es werden versionierte Images aus der
+        Github-Container-Registry geladen. Dadurch ist ein Deployment reproduzierbar. Dieselbe \texttt{VERSION} bedeutet dieselben Images.
+
+    \subsubsection{Voraussetzungen}
+        Benötigt wird ein Server bzw. eine VM mit \emph{Docker} und \emph{Docker Compose} sowie ausreichend Speicherplatz für die Daten.
+        Ein minimaler Betrieb benötigt lediglich die Portfreigabe für den Port \texttt{8080} für das Frontend (UI).
+        Der Backend-Port \texttt{8000} (API) muss nur dann zusätzlich nach außen geöffnet werden, wenn die API direkt von außen über Swagger UI erreichbar sein soll.
+        Das Frontend ruft \texttt{/api} auf und der Nginx-Server vermittelt die Anfrage an das Backend über \texttt{backend:8000}.
+
+    \subsubsection{Produktives Setup}
+        Die \texttt{docker-compose.yml} wird auf den Server kopiert und eine \texttt{.env}-Datei daneben angelegt, in
+        der die Konfiguration und Versionierung festlegt werden. Relevant sind insbesondere \texttt{VERSION} (Image-Tag), sowie die
+        \texttt{POSTGRES\_*}-Variablen. Besonders wichtig ist hier, dass sensible Informationen wie das Datenbankpasswort sicher gewählt werden sollen.
+        Der Zugriff auf diesen Bereich sollte demnach auch streng kontrolliert werden.
+        In einem Compose-Setup ist \texttt{POSTGRES\_HOST} typischerweise der Service-Name \texttt{db} und \texttt{POSTGRES\_PORT} ist \texttt{5432}.
+
+        Über \texttt{docker compose up -d} können die Container gestartet werden. Die Datenbank hat einen Healthcheck und das Backend startet erst zuverlässig, wenn die DB als healthy markiert ist.
+        Im Anschluss ist die Anwendung über \texttt{http://IP-des-Servers:8080} erreichbar.
+        Falls es nicht gewollt ist die IP-Adresse zum Aufrufen zu nutzen, kann auch ein DNS-Eintrag auf die IP-Adresse angelegt werden.
+
+    \subsubsection{Daten}
+    Die PostgreSQL-Daten liegen in dem Docker-Volume \texttt{se2data}. Dieses Volume ist der Grund, warum ein einfacher Redeploy ohne Datenverlust möglich ist.
+    Wichtig: \texttt{docker compose down -v} löscht Volumes und damit die Daten, das sollte in Produktion nur in Ausnahmefällen und mit Backup passieren.
+
+    \subsubsection{Update}
+    Ein Update besteht im Wesentlichen daraus, die \texttt{VERSION} in der \texttt{.env}-Datei zu aktualisieren und anschließend die Services neu zu starten:
+    \begin{itemize}[leftmargin=*]
+        \item \texttt{docker compose pull}
+        \item \texttt{docker compose up -d}
+    \end{itemize}
+    Danach sollten die Logs kurz geprüft werden (z.B. \texttt{docker compose logs -f}). Falls eine Version fehlschlägt, kann mit dem vorherigen \texttt{VERSION}-Wert schnell zurückgerollt werden.
+
+    \subsubsection{Monitoring}
+    Ein minimalistisches Monitoring lässt sich über Docker-Bordmittel abdecken:
+    \begin{itemize}
+        \item \texttt{docker compose ps} für den Status
+        \item \texttt{docker stats} für Ressourcen
+        \item \texttt{docker compose logs} für Fehleranalyse.
+    \end{itemize}
+
+    \subsubsection{Troubleshooting}
+    Wenn das Backend die Datenbank nicht erreicht, kann es sein, dass der Service-Name in der docker-compose.yml nicht der gleiche ist wie die Variable \texttt{POSTGRES\_HOST} in der \texttt{.env}-Datei.
+    Wenn das Frontend nicht erreichbar ist, sind häufig Firewall/Portfreigaben die Ursache. Bei einem \enquote{broken} Release ist ein Rollback durch Zurücksetzen von \texttt{VERSION} und erneutes \texttt{docker compose up -d} der schnellste Weg.
+
+\end{document}
